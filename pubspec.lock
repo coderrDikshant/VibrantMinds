@@ -286,13 +286,13 @@ packages:
     source: hosted
     version: "2.3.2"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
-      sha256: "2c11f3f94c687ee9bad77c171151672986360b2b001d109814ee7140b2cf261b"
+      sha256: "5895291c13fa8a3bd82e76d5627f69e0d85ca6a30dcac95c4ea19a5d555879c2"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "0.13.6"
   http2:
     dependency: transitive
     description:
@@ -409,10 +409,10 @@ packages:
     dependency: transitive
     description:
       name: oauth2
-      sha256: c84470642cbb2bec450ccab2f8520c079cd1ca546a76ffd5c40589e07f4e8bf4
+      sha256: c4013ef62be37744efdc0861878fd9e9285f34db1f9e331cc34100d7674feb42
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.2"
   os_detect:
     dependency: transitive
     description:

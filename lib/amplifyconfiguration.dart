@@ -29,5 +29,17 @@ const amplifyconfig = ''' {
         }
       }
     }
+  },
+  "api": {
+    "plugins": {
+      "awsAPIPlugin": {
+        "userExistAPI": {
+          "endpointType": "REST",
+          "endpoint": "https://0tkvr567rk.execute-api.us-east-1.amazonaws.com",
+          "region": "us-east-1",
+          "authorizationType": "AMAZON_COGNITO_USER_POOLS"
+        }
+      }
+    }
   }
 }''';
