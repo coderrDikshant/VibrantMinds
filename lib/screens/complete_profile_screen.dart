@@ -14,7 +14,6 @@ class CompleteProfileScreen extends StatefulWidget {
   @override
   State<CompleteProfileScreen> createState() => _CompleteProfileScreenState();
 }
-
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
