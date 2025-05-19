@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/quiz.dart';
+import '../../models/user_stats.dart';
 import '../../services/firestore_service.dart';
-import '../../widgets/question_widget.dart';
-import '../models/user_stats.dart';
+import 'question_map_screen.dart';
 import 'stats_screen.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class QuizScreen extends StatefulWidget {
   final String email;
   final Category category;
   final Quiz quiz;
+  final String difficulty;
 
   const QuizScreen({
     super.key,
@@ -22,45 +24,114 @@ class QuizScreen extends StatefulWidget {
     required this.email,
     required this.category,
     required this.quiz,
+    required this.difficulty,
   });
 
   @override
-  _QuizScreenState createState() => _QuizScreenState();
+  State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  List<Question> questions = [];
-  List<String?> selectedAnswers = [];
-  bool isLoading = true;
-  int currentQuestionIndex = 0;
+  List<Question> _questions = [];
+  int _currentIndex = 0;
+  Timer? _timer;
+  int _remainingSeconds = 600; // 10 minutes
+  final Map<int, String> _questionStatus = {};
+  late DateTime _startTime;
 
   @override
   void initState() {
     super.initState();
-    _loadQuestions();
+    _fetchQuestions();
+    _startTimer();
+    _startTime = DateTime.now();
   }
 
-  Future<void> _loadQuestions() async {
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
-    final fetchedQuestions = await firestoreService.getQuestions(widget.category.id, widget.quiz.id);
+  Future<void> _fetchQuestions() async {
+    final questions = await FirestoreService(FirebaseFirestore.instance).getQuestions(
+      widget.category.id,
+      widget.difficulty,
+      widget.quiz.id,
+    );
+
+    if (!mounted) return;
     setState(() {
-      questions = fetchedQuestions;
-      selectedAnswers = List<String?>.filled(questions.length, null);
-      isLoading = false;
+      _questions = questions;
+      for (int i = 0; i < _questions.length; i++) {
+        _questionStatus[i] = "unvisited";
+      }
     });
   }
 
-  void _submitQuiz() {
-    int score = 0;
-    int correctAnswers = 0;
-    int wrongAnswers = 0;
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_remainingSeconds > 0) {
+        setState(() => _remainingSeconds--);
+      } else {
+        _timer?.cancel();
+        _submitQuiz(autoSubmit: true);
+      }
+    });
+  }
 
-    for (int i = 0; i < questions.length; i++) {
-      if (selectedAnswers[i] == questions[i].correctAnswer) {
-        score++;
-        correctAnswers++;
-      } else if (selectedAnswers[i] != null) {
-        wrongAnswers++;
+  String _formatTime(int seconds) {
+    final min = (seconds ~/ 60).toString().padLeft(2, '0');
+    final sec = (seconds % 60).toString().padLeft(2, '0');
+    return "$min:$sec";
+  }
+
+  void _markAnswered() => _questionStatus[_currentIndex] = "answered";
+  void _markSkipped() {
+    _questionStatus[_currentIndex] = "skipped";
+    _goToNextQuestion();
+  }
+
+  void _markForReview() {
+    _questionStatus[_currentIndex] = "review";
+    _goToNextQuestion();
+  }
+
+  void _goToNextQuestion() {
+    if (_currentIndex < _questions.length - 1) {
+      setState(() => _currentIndex++);
+    }
+  }
+
+  void _goToPreviousQuestion() {
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex--);
+    }
+  }
+
+  void _goToMapScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuestionMapScreen(
+          totalQuestions: _questions.length,
+          questionStatus: _questionStatus,
+          onQuestionSelected: (index) {
+            setState(() => _currentIndex = index);
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _submitQuiz({bool autoSubmit = false}) async {
+    _timer?.cancel();
+    final endTime = DateTime.now();
+    final duration = endTime.difference(_startTime).inSeconds;
+
+    int correct = 0;
+    int wrong = 0;
+
+    for (var q in _questions) {
+      if (q.selectedOption == q.correctAnswer) {
+        correct++;
+      } else if (q.selectedOption != null) {
+        wrong++;
       }
     }
 
@@ -68,85 +139,141 @@ class _QuizScreenState extends State<QuizScreen> {
       userId: widget.userId,
       name: widget.name,
       email: widget.email,
-      category: widget.category.id,
+      category: widget.category.name,
       quizId: widget.quiz.id,
-      difficulty: widget.quiz.difficulty,
-      score: score,
-      totalQuestions: questions.length,
-      timestamp: DateTime.now(),
-      correctAnswers: correctAnswers,
-      wrongAnswers: wrongAnswers,
+      difficulty: widget.difficulty,
+      questions: _questions,
+      timeTakenSeconds: duration,
+      score: correct,
+      totalQuestions: _questions.length,
+      correctAnswers: correct,
+      wrongAnswers: wrong,
+      timestamp: endTime,
     );
 
-    Provider.of<FirestoreService>(context, listen: false).saveUserStats(stats);
+    await FirestoreService(FirebaseFirestore.instance).saveUserStats(stats);
 
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StatsScreen(stats: stats),
+        builder: (_) => StatsScreen(stats: stats),
       ),
     );
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (questions.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('No questions available')),
-      );
+    if (_questions.isEmpty) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final question = _questions[_currentIndex];
+
     return Scaffold(
-      appBar: AppBar(title: Text('Quiz - ${widget.category.name}')),
-      body: Column(
-        children: [
-          Expanded(
-            child: QuestionWidget(
-              question: questions[currentQuestionIndex],
-              questionNumber: currentQuestionIndex + 1,
-              selectedAnswer: selectedAnswers[currentQuestionIndex],
-              onAnswerSelected: (answer) {
-                setState(() {
-                  selectedAnswers[currentQuestionIndex] = answer;
-                });
-              },
-            ),
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.deepOrange,
+        automaticallyImplyLeading: false,
+        title: Text('Quiz - ${widget.quiz.title}'),
+        actions: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (currentQuestionIndex > 0)
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      currentQuestionIndex--;
-                    });
-                  },
-                  child: const Text('Previous'),
-                ),
-              if (currentQuestionIndex < questions.length - 1)
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      currentQuestionIndex++;
-                    });
-                  },
-                  child: const Text('Next'),
-                ),
-              if (currentQuestionIndex == questions.length - 1)
-                ElevatedButton(
-                  onPressed: selectedAnswers.contains(null) ? null : _submitQuiz,
-                  child: const Text('Submit'),
-                ),
+              const Icon(Icons.access_time, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                _formatTime(_remainingSeconds),
+                style: const TextStyle(color: Colors.white),
+              ),
+              IconButton(
+                icon: const Icon(Icons.grid_view),
+                onPressed: _goToMapScreen,
+              )
             ],
           ),
-          const SizedBox(height: 16),
         ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Q${_currentIndex + 1}: ${question.question}",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 20),
+            ...question.options.map((option) {
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: question.selectedOption == option
+                        ? Colors.deepOrange
+                        : Colors.orange.shade100,
+                    foregroundColor: question.selectedOption == option
+                        ? Colors.white
+                        : Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      question.selectedOption = option;
+                      _markAnswered();
+                    });
+                  },
+                  child: Text(option, style: const TextStyle(fontSize: 16)),
+                ),
+              );
+            }).toList(),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                OutlinedButton(onPressed: _goToPreviousQuestion, child: const Text("Prev")),
+                OutlinedButton(onPressed: _markSkipped, child: const Text("Skip")),
+                OutlinedButton(onPressed: _markForReview, child: const Text("Mark Review")),
+                ElevatedButton(onPressed: _goToNextQuestion, child: const Text("Next")),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.check),
+                label: const Text("Submit Quiz"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Submit Quiz?'),
+                      content: const Text('Are you sure you want to submit the quiz? You cannot change your answers after submission.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Submit'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    _submitQuiz();
+                  }
+                },
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

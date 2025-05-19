@@ -10,14 +10,14 @@ class StatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Quiz Stats: ${stats.category.toUpperCase()} - ${stats.quizId}',
+              'Quiz: ${stats.category.toUpperCase()} - ${stats.quizId}',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -25,7 +25,7 @@ class StatsCard extends StatelessWidget {
             Text('Score: ${stats.score} / ${stats.totalQuestions}'),
             Text('Correct Answers: ${stats.correctAnswers}'),
             Text('Wrong Answers: ${stats.wrongAnswers}'),
-            Text('Completed: ${stats.timestamp.toString().substring(0, 16)}'),
+            Text('Date: ${stats.timestamp.toString().substring(0, 16)}'),
           ],
         ),
       ),
