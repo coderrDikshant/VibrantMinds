@@ -16,6 +16,9 @@ class ProfileRedirector extends StatefulWidget {
 }
 
 class _ProfileRedirectorState extends State<ProfileRedirector> {
+  bool _isLoading = true;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -23,52 +26,80 @@ class _ProfileRedirectorState extends State<ProfileRedirector> {
   }
 
   Future<void> _checkProfile() async {
-  try {
-    final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
-    final idToken = session.userPoolTokensResult.value.idToken;
-    final decoded = parseJwt(idToken.raw);
-    final email = decoded['email'];
+    try {
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+      final idToken = session.userPoolTokensResult.value.idToken;
+      final decoded = parseJwt(idToken.raw);
+      final email = decoded['email'];
 
-    // ⬇️ Use POST to send the expected structure
-    final response = await http.post(
-      Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "httpMethod": "GET",
-        "queryStringParameters": {
-          "email": email
+      final response = await http.post(
+        Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "httpMethod": "GET",
+          "queryStringParameters": {"email": email}
+        }),
+      );
+
+      safePrint("API Response Status: ${response.statusCode}");
+      safePrint("API Response Body: ${response.body}");
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        final data = jsonDecode(responseBody['body']);
+        final profileComplete = data['profileComplete'] ?? false;
+
+        if (profileComplete) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const RoleBasedHome()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CompleteProfileScreen(email: email),
+            ),
+          );
         }
-      }),
-    );
-
-    safePrint("📡 Status: ${response.statusCode}");
-    safePrint("📄 Body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(jsonDecode(response.body)['body']);
-      final profileComplete = data['profileComplete'];
-
-      if (profileComplete == true) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const RoleBasedHome()),
-        );
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => CompleteProfileScreen(email: email)),
-        );
+        setState(() {
+          _errorMessage = 'Failed to verify profile status';
+          _isLoading = false;
+        });
       }
-    } else {
-      safePrint("❌ Error: Profile API failed");
+    } catch (e) {
+      safePrint("Profile check error: $e");
+      setState(() {
+        _errorMessage = 'An error occurred. Please try again.';
+        _isLoading = false;
+      });
     }
-  } catch (e) {
-    safePrint("⚠️ Exception: $e");
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      body: Center(
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _errorMessage ?? 'Unknown error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _checkProfile,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+      ),
+    );
   }
 }

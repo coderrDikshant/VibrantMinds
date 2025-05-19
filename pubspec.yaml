@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  
   http: ^0.13.6
   amplify_flutter: ^2.0.0
   amplify_auth_cognito: ^2.0.0
