@@ -28,11 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  
-  http: ^0.13.6
-  amplify_flutter: ^2.0.0
-  amplify_auth_cognito: ^2.0.0
-  amplify_authenticator: ^2.0.0
+
   flutter:
     sdk: flutter
 
@@ -41,6 +37,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^3.13.0
   cloud_firestore: ^5.6.7
+  provider: ^6.1.5
+  crypto: ^3.0.6
+  http: ^0.13.6
+  amplify_flutter: ^2.0.0
+  amplify_auth_cognito: ^2.0.0
+  amplify_authenticator: ^2.0.0
+
 
 dev_dependencies:
   flutter_test:

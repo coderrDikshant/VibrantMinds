@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../widgets/personal_info_section.dart';
-import '../widgets/education_section.dart';
-import '../widgets/experience_section.dart';
+import '../../widgets/profile_cards/personal_info_section.dart';
+import '../../widgets/profile_cards/education_section.dart';
+import '../../widgets/profile_cards/experience_section.dart';
 import 'role_based_home.dart';
 
 class CompleteProfileScreen extends StatefulWidget {

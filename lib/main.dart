@@ -1,50 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:amplify_authenticator/amplify_authenticator.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:amplify_authenticator/amplify_authenticator.dart';
+
+// Local imports
 import 'firebase_options.dart';
 import 'amplifyconfiguration.dart';
-import 'widgets/profile_redirector.dart';
+import 'services/firestore_service.dart';
+import 'widgets/profile_cards/profile_redirector.dart'; // Main app landing screen
+import 'theme/vibrant_theme.dart'; // ✅ Your custom theme
 
 void main() async {
-   await Firebase.initializeApp(
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+
+  // Initialize Amplify
+  await _configureAmplify();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(FirebaseFirestore.instance),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
+Future<void> _configureAmplify() async {
+  try {
+    await Amplify.addPlugin(AmplifyAuthCognito());
+    await Amplify.configure(amplifyconfig);
+  } catch (e) {
+    safePrint('Amplify error: $e');
+  }
+}
+
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    _configureAmplify();
-  }
-
-  Future<void> _configureAmplify() async {
-    try {
-      await Amplify.addPlugin(AmplifyAuthCognito());
-      await Amplify.configure(amplifyconfig);
-    } catch (e) {
-      safePrint('Amplify error: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Authenticator(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        builder: Authenticator.builder(),
-        home: const ProfileRedirector(),
+        title: 'Vibrant Minds App',
+        theme: VibrantTheme.themeData, // ✅ Use your theme here
+        builder: Authenticator.builder(), // Required for Amplify Authenticator
+        home: const CombinedRedirector(),
       ),
     );
+  }
+}
+
+/// This widget decides which screen to show initially.
+/// You can adjust this logic based on user roles or states.
+class CombinedRedirector extends StatelessWidget {
+  const CombinedRedirector({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProfileRedirector(); // Role-based redirect
   }
 }

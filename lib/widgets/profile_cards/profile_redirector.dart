@@ -3,10 +3,9 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import '../screens/role_based_home.dart';
-import '../screens/complete_profile_screen.dart';
-import '../utils/jwt_utils.dart';
+import '../../screens/profile_screens/role_based_home.dart';
+import '../../screens/profile_screens/complete_profile_screen.dart';
+import '../../utils/jwt_utils.dart';
 
 class ProfileRedirector extends StatefulWidget {
   const ProfileRedirector({super.key});
