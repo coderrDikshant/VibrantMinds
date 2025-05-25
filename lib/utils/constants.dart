@@ -3,9 +3,9 @@ class AppConstants {
   static const String difficultyCollection = 'difficulty';
   static const String quizzesCollection = 'quizzes';
   static const String questionsCollection = 'questions';
-  static const String userStatsCollection = 'user_stats';
-  static const String quizAttemptsCollection = 'quiz_attempts';
+  static const String userStatsCollection = 'userStats';
+  static const String quizAttemptsCollection = 'quizAttempts';
   static const String blogsCollection = 'blogs';
-  static const List<String> difficulties = ['easy', 'medium', 'hard', 'mix'];
-
+  static const String successStoriesCollection = 'successStories';
+  static const List<String> difficulties = ['easy', 'medium', 'hard'];
 }

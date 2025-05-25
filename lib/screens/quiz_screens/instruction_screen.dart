@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/quiz_models/category.dart';
 import '../../models/quiz_models/quiz.dart';
-import '../../screens/quiz_screens/quiz_screen.dart';
-import '../../../theme/vibrant_theme.dart';
+import '../../theme/vibrant_theme.dart';
+import 'quiz_screen.dart';
 
-class InstructionScreen extends StatelessWidget {
+class InstructionScreen extends StatefulWidget {
   final String name;
   final String email;
   final Category category;
@@ -21,6 +21,36 @@ class InstructionScreen extends StatelessWidget {
   });
 
   @override
+  State<InstructionScreen> createState() => _InstructionScreenState();
+}
+
+class _InstructionScreenState extends State<InstructionScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..forward();
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = VibrantTheme.themeData;
     final size = MediaQuery.of(context).size;
@@ -28,80 +58,140 @@ class InstructionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Instructions'),
-        backgroundColor: VibrantTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
-      backgroundColor: VibrantTheme.backgroundColor,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: size.height - kToolbarHeight - MediaQuery.of(context).padding.top,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [VibrantTheme.backgroundColor, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: IntrinsicHeight(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Quiz Instructions',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                    color: VibrantTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildInstructionText('• Each question has one correct answer.', theme),
-                _buildInstructionText('• You can mark a question for review.', theme),
-                _buildInstructionText('• Use the map icon to navigate between questions.', theme),
-                _buildInstructionText('• Once started, you cannot go back until submission.', theme),
-                _buildInstructionText('• Quiz will auto-submit after the timer runs out.', theme),
-                _buildInstructionText('• No tab switching and taking screenshots allowed.', theme),
-
-                const SizedBox(height: 20),
-                Text(
-                  'Question Status Colors:',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _buildColoredInstruction('Answered: Green', Colors.green.shade600, theme),
-                _buildColoredInstruction('Marked for Review: Yellow', Colors.amber.shade600, theme),
-                _buildColoredInstruction('Skipped: Red', Colors.red.shade600, theme),
-                _buildColoredInstruction('Unvisited: White', theme.colorScheme.surface, theme, textColor: Colors.black87),
-
-                const Spacer(),
-                Center(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: VibrantTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: size.height - kToolbarHeight - MediaQuery.of(context).padding.top,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      'Quiz Instructions',
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        color: VibrantTheme.primaryColor,
                       ),
-                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => QuizScreen(
-                            name: name,
-                            email: email,
-                            category: category,
-                            quiz: quiz,
-                            difficulty: difficulty,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('Start Quiz', style: TextStyle(color: Colors.white)),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  ...[
+                    'Each question has one correct answer.',
+                    'You can mark a question for review.',
+                    'Use the map icon to navigate between questions.',
+                    'Once started, you cannot go back until submission.',
+                    'Quiz will auto-submit after the timer runs out.',
+                    'No tab switching or taking screenshots allowed.',
+                  ].asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final text = entry.value;
+                    return AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        final animation = CurvedAnimation(
+                          parent: _controller,
+                          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
+                        );
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.5),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _buildInstructionText('• $text', theme),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 20),
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      'Question Status Colors:',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: VibrantTheme.textColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...[
+                    {'text': 'Answered: Green', 'color': Colors.green.shade600},
+                    {'text': 'Marked for Review: Yellow', 'color': Colors.amber.shade600},
+                    {'text': 'Skipped: Red', 'color': Colors.red.shade600},
+                    {
+                      'text': 'Unvisited: White',
+                      'color': theme.colorScheme.surface,
+                      'textColor': Colors.black87
+                    },
+                  ].asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        final animation = CurvedAnimation(
+                          parent: _controller,
+                          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
+                        );
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.5),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _buildColoredInstruction(
+                        item['text'] as String,
+                        item['color'] as Color,
+                        theme,
+                        textColor: item['textColor'] as Color?,
+                      ),
+                    );
+                  }).toList(),
+                  const Spacer(),
+                  Center(
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => QuizScreen(
+                                name: widget.name,
+                                email: widget.email,
+                                category: widget.category,
+                                quiz: widget.quiz,
+                                difficulty: widget.difficulty,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Start Quiz'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -114,9 +204,8 @@ class InstructionScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         text,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 16,
-          color: Colors.black,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: VibrantTheme.textColor,
         ),
       ),
     );
@@ -140,9 +229,8 @@ class InstructionScreen extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontSize: 16,
-                color: textColor ?? Colors.black,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: textColor ?? VibrantTheme.textColor,
               ),
             ),
           ),
