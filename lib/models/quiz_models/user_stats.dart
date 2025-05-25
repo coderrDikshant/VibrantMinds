@@ -32,7 +32,6 @@ class UserStats {
     required this.timestamp,
   });
 
-  /// Map for quiz attempt (EXCLUDES name/email to store only in root)
   Map<String, dynamic> toFirestore() {
     return {
       'userId': userId,
@@ -49,7 +48,6 @@ class UserStats {
     };
   }
 
-  /// Factory to create full UserStats (in case you load everything)
   factory UserStats.fromFirestore(Map<String, dynamic> data) {
     return UserStats(
       userId: data['userId'] ?? '',

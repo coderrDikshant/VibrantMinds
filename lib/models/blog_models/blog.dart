@@ -1,36 +1,45 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Blog {
   final String id;
   final String title;
-  final String content;
-  final String imageUrl;
   final String author;
-  final DateTime timestamp;
+  final String imageUrl;
+  final String content;
   int likes;
-  int dislikes;
+  bool userLiked;
+  int commentCount;
 
   Blog({
     required this.id,
     required this.title,
-    required this.content,
-    required this.imageUrl,
     required this.author,
-    required this.timestamp,
-    required this.likes,
-    required this.dislikes,
+    required this.imageUrl,
+    required this.content,
+    this.likes = 0,
+    this.userLiked = false,
+    this.commentCount = 0,
   });
 
   factory Blog.fromFirestore(Map<String, dynamic> data, String id) {
     return Blog(
       id: id,
       title: data['title'] ?? '',
-      content: data['content'] ?? '',
+      author: data['author'] ?? 'Anonymous',
       imageUrl: data['imageUrl'] ?? '',
-      author: data['author'] ?? '',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      content: data['content'] ?? '',
       likes: data['likes'] ?? 0,
-      dislikes: data['dislikes'] ?? 0,
+      userLiked: data['userLiked'] ?? false,
+      commentCount: data['commentCount'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'author': author,
+      'imageUrl': imageUrl,
+      'content': content,
+      'likes': likes,
+      'commentCount': commentCount,
+    };
   }
 }
