@@ -151,7 +151,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Vibrant Minds Tech',
+                    'VibrantMinds Technologies',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -220,7 +220,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Vibrant Minds Tech',
+          'VibrantMinds Tech',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -232,9 +232,9 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         iconTheme: const IconThemeData(color: Color(0xFFD32F2F)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border, color: Color(0xFFD32F2F)),
+            icon: const Icon(Icons.task_alt, color: Color(0xFFD32F2F)),
             onPressed: () => _bookmark(context),
-            tooltip: 'Bookmark',
+            tooltip: 'Applied Jobs',
           ),
           Stack(
             children: [

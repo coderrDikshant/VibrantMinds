@@ -70,7 +70,7 @@ class _PreviousStatsScreenState extends State<PreviousStatsScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: const Text('Previous Quiz Stats'),
-        backgroundColor: VibrantTheme.primaryColor,
+        backgroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(

@@ -151,8 +151,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   child: _isSubmitting
-                      ? Lottie.network(
-                    'https://assets.lottiefiles.com/packages/lf20_y8jzcz9v.json', // Loading animation
+                      ? Lottie.asset(
+                    'assets/animations/loading_animation.json', // Loading animation
                     width: 24,
                     height: 24,
                   )
