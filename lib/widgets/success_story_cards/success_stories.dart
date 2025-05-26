@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/success_story.dart';
+
 import '../../models/comment.dart';
+import '../../models/success_story.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/constants.dart';
 import '../../theme/vibrant_theme.dart';
@@ -66,7 +67,7 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
         await service.removeLikeSuccessStory(story.id, widget.userEmail);
         setState(() {
           _likedStories[story.id] = false;
-          story.likes--;
+          // story.likes--;
         });
       } catch (e) {
         if (mounted) {
@@ -85,7 +86,7 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
       await service.likeSuccessStory(story.id, widget.userEmail);
       setState(() {
         _likedStories[story.id] = true;
-        story.likes++;
+        // story.likes++;
         _animationControllers.putIfAbsent(
           story.id,
               () => AnimationController(
@@ -131,7 +132,7 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
           itemId: story.id,
           userEmail: widget.userEmail,
         );
-        story.commentCount++;
+        // story.commentCount++;
       });
     } catch (e) {
       if (mounted) {
