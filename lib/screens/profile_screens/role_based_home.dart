@@ -89,15 +89,13 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     }
   }
 
-  // ✅ Updated: Navigate to Bookmark screen
   void _bookmark(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) =>  BookmarkScreen()),
+      MaterialPageRoute(builder: (_) => BookmarkScreen()),
     );
   }
 
-  // ✅ Updated: Navigate to Notification screen
   void _showNotifications(BuildContext context) {
     Navigator.push(
       context,
@@ -127,81 +125,110 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   }
 
   Widget _buildDrawer() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Drawer(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFD32F2F), Color(0xFFE57373)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              height: 220,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.lightbulb, size: 60, color: Color(0xFFD32F2F)),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Vibrant Minds Tech',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  Text(
-                    _userEmail.isNotEmpty ? _userEmail : 'user@vibrantminds.tech',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                ],
-              ),
+      child: SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFD32F2F), Color(0xFFE57373)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: screenHeight * 0.25,
+                padding: EdgeInsets.symmetric(
+                  vertical: isSmallScreen ? 8 : 16,
+                  horizontal: isSmallScreen ? 12 : 20,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildDrawerItem(context, icon: Icons.home, title: 'Home', pageIndex: 0),
-                    _buildDrawerItem(context, icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
-                    _buildDrawerItem(context, icon: Icons.star, title: 'Success Stories', pageIndex: 2),
-                    _buildDrawerItem(context, icon: Icons.book, title: 'Blogs', pageIndex: 3),
-                    _buildDrawerItem(context, icon: Icons.work, title: 'Jobs', pageIndex: 4),
-                    _buildDrawerItem(context, icon: Icons.feedback, title: 'Feedback', pageIndex: 5),
-                    _buildDrawerItem(context, icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
+                    CircleAvatar(
+                      radius: isSmallScreen ? 36 : 50,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.lightbulb,
+                          size: isSmallScreen ? 36 : 60,
+                          color: const Color(0xFFD32F2F)),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'VibrantMinds Technologies',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 16 : 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _userEmail.isNotEmpty
+                          ? _userEmail
+                          : 'user@vibrantminds.tech',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 12 : 14,
+                        color: Colors.white70,
+                        fontFamily: 'Roboto',
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                onPressed: () => _logout(context),
-                icon: const Icon(Icons.logout, color: Colors.white),
-                label: const Text('Logout', style: TextStyle(color: Colors.white, fontFamily: 'Roboto')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  minimumSize: const Size(double.infinity, 50),
+              Expanded(
+                child: Container(
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        _buildDrawerItem(context, icon: Icons.home, title: 'Home', pageIndex: 0),
+                        _buildDrawerItem(context, icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
+                        _buildDrawerItem(context, icon: Icons.star, title: 'Success Stories', pageIndex: 2),
+                        _buildDrawerItem(context, icon: Icons.book, title: 'Blogs', pageIndex: 3),
+                        _buildDrawerItem(context, icon: Icons.work, title: 'Jobs', pageIndex: 4),
+                        _buildDrawerItem(context, icon: Icons.feedback, title: 'Feedback', pageIndex: 5),
+                        _buildDrawerItem(context, icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 12 : 16,
+                  vertical: isSmallScreen ? 8 : 16,
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () => _logout(context),
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                  label: Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 14 : 16,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD32F2F),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isSmallScreen ? 10 : 12,
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    minimumSize: Size(double.infinity, isSmallScreen ? 45 : 50),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -220,7 +247,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Vibrant Minds Tech',
+          'VibrantMinds Tech',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -228,13 +255,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
             fontFamily: 'Poppins',
           ),
         ),
-        centerTitle: false,
         iconTheme: const IconThemeData(color: Color(0xFFD32F2F)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border, color: Color(0xFFD32F2F)),
+            icon: const Icon(Icons.task_alt, color: Color(0xFFD32F2F)),
             onPressed: () => _bookmark(context),
-            tooltip: 'Bookmark',
+            tooltip: 'Applied Jobs',
           ),
           Stack(
             children: [

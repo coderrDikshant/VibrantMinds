@@ -65,6 +65,13 @@ class FirestoreService {
       if (stats.userId.isEmpty) {
         throw Exception('User ID cannot be empty');
       }
+      if (stats.email.isEmpty) {
+        throw Exception('User email cannot be empty');
+      }
+      if (stats.quizId.isEmpty) {
+        throw Exception('Quiz ID cannot be empty');
+      }
+
       final userDocRef = _firestore.collection(AppConstants.userStatsCollection).doc(stats.userId);
 
       await userDocRef.set({
@@ -77,6 +84,14 @@ class FirestoreService {
         ..remove('email');
 
       await userDocRef.collection(AppConstants.quizAttemptsCollection).add(attemptData);
+
+      await _firestore.collection(AppConstants.quizResultsCollection).add({
+        'userEmail': stats.email,
+        'userName': stats.name.isEmpty ? 'Unknown' : stats.name,
+        'quizId': stats.quizId,
+        'score': stats.score,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       print("Error saving user stats: $e");
       rethrow;
@@ -85,7 +100,6 @@ class FirestoreService {
 
   Future<List<UserStats>> getUserStatsByEmail(String email) async {
     try {
-      // First, find the user document by email
       final userSnapshot = await _firestore
           .collection(AppConstants.userStatsCollection)
           .where('email', isEqualTo: email)
@@ -95,12 +109,10 @@ class FirestoreService {
         return [];
       }
 
-      // Assume the first matching user document (email should be unique)
       final userDoc = userSnapshot.docs.first;
       final userId = userDoc.id;
       final userData = userDoc.data();
 
-      // Fetch all quiz attempts for the user
       final attemptsSnapshot = await _firestore
           .collection(AppConstants.userStatsCollection)
           .doc(userId)
@@ -110,17 +122,54 @@ class FirestoreService {
 
       return attemptsSnapshot.docs.map((doc) {
         final attemptData = doc.data();
-        // Merge user-level data (name, email) with attempt data
         return UserStats.fromFirestore({
           ...attemptData,
           'name': userData['name'],
           'email': userData['email'],
           'userId': userId,
-          'id': doc.id, // Add attempt ID
+          'id': doc.id,
         });
       }).toList();
     } catch (e) {
       print("Error fetching user stats by email: $e");
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getQuizResults() async {
+    try {
+      final snapshot = await _firestore
+          .collection(AppConstants.quizResultsCollection)
+          .orderBy('score', descending: true)
+          .get();
+
+      final results = <Map<String, dynamic>>[];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final userEmail = data['userEmail'] as String? ?? '';
+        final userName = data['userName'] as String? ?? 'Unknown';
+        final quizId = data['quizId'] as String? ?? '';
+        final score = data['score'] as num? ?? 0;
+        final timestamp = data['timestamp'] as Timestamp? ?? Timestamp.now();
+
+        if (userEmail.isEmpty || quizId.isEmpty) {
+          print('Skipping invalid quiz result: $data');
+          continue;
+        }
+
+        results.add({
+          'userEmail': userEmail,
+          'userName': userName,
+          'quizId': quizId,
+          'score': score,
+          'timestamp': timestamp,
+        });
+      }
+
+      print('Fetched ${results.length} valid quiz results');
+      return results;
+    } catch (e) {
+      print("Error fetching quiz results: $e");
       rethrow;
     }
   }
@@ -217,6 +266,8 @@ class FirestoreService {
         final data = doc.data();
         print("Processing story ID: ${doc.id}, Data: $data");
         final story = SuccessStory.fromFirestore(data, doc.id);
+
+        // Check user interaction for likes
         final userInteraction = await _firestore
             .collection(AppConstants.successStoriesCollection)
             .doc(story.id)
@@ -224,16 +275,15 @@ class FirestoreService {
             .doc(userEmail)
             .get();
 
-        if (userInteraction.exists) {
-          story.userLiked = userInteraction.data()?['liked'] ?? false;
-        }
+        story.userLiked = userInteraction.exists && (userInteraction.data()?['liked'] ?? false);
 
+        // Fetch comment count
         final commentSnapshot = await _firestore
             .collection(AppConstants.successStoriesCollection)
             .doc(story.id)
             .collection('comments')
             .get();
-        story.commentCount = commentSnapshot.docs.length;
+        // story.commentCount = commentSnapshot.docs.length;
 
         return story;
       }).toList());
@@ -282,7 +332,7 @@ class FirestoreService {
         await batch.commit();
       }
     } catch (e) {
-      print("Error removing like: $e");
+      print("Error removing like from success story: $e");
       rethrow;
     }
   }

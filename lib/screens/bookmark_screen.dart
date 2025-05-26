@@ -12,7 +12,7 @@ class BookmarkScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bookmarks'),
+        title: const Text('Applied'),
       ),
       body: bookmarks.isEmpty
           ? const Center(
