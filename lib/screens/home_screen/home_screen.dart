@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Welcome to Vibrant Minds Tech!',
+              'Welcome to VibrantMinds Technologies!',
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,

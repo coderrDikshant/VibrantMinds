@@ -70,7 +70,7 @@ class _PreviousStatsScreenState extends State<PreviousStatsScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: const Text('Previous Quiz Stats'),
-        backgroundColor: VibrantTheme.primaryColor,
+        backgroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -94,13 +94,13 @@ class _PreviousStatsScreenState extends State<PreviousStatsScreen> with SingleTi
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Lottie.asset(
-                'assets/animations/empty_state.json',
+                'assets/animations/empty_state_animation.json',
                 width: 150,
                 height: 150,
               ),
               const SizedBox(height: 16),
               Text(
-                'No previous quiz stats found!',
+                'No previous quiz stats found!\n Try taking a quiz first.',
                 style: VibrantTheme.themeData.textTheme.titleLarge?.copyWith(
                   color: VibrantTheme.primaryColor,
                 ),
