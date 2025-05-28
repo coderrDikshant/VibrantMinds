@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../screens/quiz_screens/category_selection_screen.dart';
 import '../../screens/quiz_screens/previous_stats_screen.dart';
 import '../../screens/quiz_screens/instruction_screen.dart';
-import '../../screens/quiz_screens/view_leaderboard_screen.dart'; // New import
+import '../../screens/quiz_screens/view_leaderboard_screen.dart';
 import '../../theme/vibrant_theme.dart';
 import '../../utils/constants.dart';
 import '../../services/firestore_service.dart';
@@ -23,28 +23,17 @@ class QuizEntryScreen extends StatefulWidget {
 }
 
 class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProviderStateMixin {
-  int _selectedTab = 0;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   List<Quiz> _randomQuizzes = [];
   List<Category> _randomQuizCategories = [];
   List<String> _randomQuizDifficulties = [];
   bool _isLoadingRandomQuiz = false;
+  List<Category> _categories = [];
+  List<String> _difficulties = [];
+  String? _selectedCategoryId;
+  String? _selectedDifficulty;
 
-  final List<Map<String, String>> _tests = [
-    {
-      'title': 'Math Olympiad Prep',
-      'description': 'Practice for competitive math exams.',
-      'difficulty': 'Hard',
-    },
-    {
-      'title': 'Coding Challenge',
-      'description': 'Test your programming skills.',
-      'difficulty': 'Medium',
-    },
-  ];
-
-  final bool _hasActiveTests = false;
   final FirestoreService _firestoreService = FirestoreService(FirebaseFirestore.instance);
 
   @override
@@ -57,12 +46,40 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
+    _fetchCategoriesAndDifficulties();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchCategoriesAndDifficulties() async {
+    try {
+      final categories = await _firestoreService.getCategories();
+      final difficultySnapshot = await FirebaseFirestore.instance
+          .collection(AppConstants.categoriesCollection)
+          .get();
+      final difficulties = <String>{};
+      for (var categoryDoc in difficultySnapshot.docs) {
+        final diffSnapshot = await categoryDoc.reference
+            .collection(AppConstants.difficultyCollection)
+            .get();
+        for (var doc in diffSnapshot.docs) {
+          final difficulty = doc.data()['difficulty'] as String? ?? 'Medium';
+          difficulties.add(difficulty);
+        }
+      }
+      setState(() {
+        _categories = categories;
+        _difficulties = difficulties.toList()..sort();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching filters: $e')),
+      );
+    }
   }
 
   Future<void> _fetchRandomQuiz() async {
@@ -74,7 +91,9 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
     });
 
     try {
-      final categories = await _firestoreService.getCategories();
+      final categories = _selectedCategoryId != null
+          ? _categories.where((c) => c.id == _selectedCategoryId).toList()
+          : await _firestoreService.getCategories();
       if (categories.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No categories available')),
@@ -86,7 +105,7 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
       }
 
       final random = Random();
-      const int quizCount = 5;
+      const int quizCount = 4;
       List<Quiz> selectedQuizzes = [];
       List<Category> selectedCategories = [];
       List<String> selectedDifficulties = [];
@@ -100,11 +119,17 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
             .doc(categoryId)
             .collection(AppConstants.difficultyCollection)
             .get();
-        if (difficultySnapshot.docs.isEmpty) continue;
+        final availableDifficulties = difficultySnapshot.docs
+            .map((doc) => doc.data()['difficulty'] as String? ?? 'Medium')
+            .toList();
+        if (availableDifficulties.isEmpty) continue;
 
-        final randomDifficulty = difficultySnapshot.docs[random.nextInt(difficultySnapshot.docs.length)];
-        final difficulty = randomDifficulty.data()['difficulty'] ?? 'Medium';
-        final difficultyId = randomDifficulty.id;
+        final difficulty = _selectedDifficulty != null && availableDifficulties.contains(_selectedDifficulty)
+            ? _selectedDifficulty!
+            : availableDifficulties[random.nextInt(availableDifficulties.length)];
+        final difficultyDoc = difficultySnapshot.docs
+            .firstWhere((doc) => doc.data()['difficulty'] == difficulty);
+        final difficultyId = difficultyDoc.id;
 
         final quizzes = await _firestoreService.getQuizzes(categoryId, difficultyId, difficulty);
         if (quizzes.isEmpty) continue;
@@ -117,7 +142,7 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
 
       if (selectedQuizzes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No quizzes available')),
+          const SnackBar(content: Text('No quizzes available for selected filters')),
         );
         setState(() {
           _isLoadingRandomQuiz = false;
@@ -136,7 +161,7 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
         _isLoadingRandomQuiz = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching random quizzes: $e')),
+        SnackBar(content: Text('Error fetching quizzes: $e')),
       );
     }
   }
@@ -192,15 +217,6 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
     );
   }
 
-  void _startPracticeMode() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Starting practice mode!'),
-        backgroundColor: VibrantTheme.primaryColor,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -211,76 +227,9 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 8.0 : 16.0,
-                    vertical: isSmallScreen ? 4.0 : 8.0,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedTab = 0),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _selectedTab == 0 ? Colors.red : Colors.grey.shade300,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Quiz',
-                                style: VibrantTheme.themeData.textTheme.headlineMedium?.copyWith(
-                                  color: _selectedTab == 0 ? Colors.red : VibrantTheme.textColor,
-                                  fontSize: isSmallScreen ? 16 : 20,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: isSmallScreen ? 4 : 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedTab = 1),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _selectedTab == 1 ? Colors.red : Colors.grey.shade300,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Test',
-                                style: VibrantTheme.themeData.textTheme.headlineMedium?.copyWith(
-                                  color: _selectedTab == 1 ? Colors.red : VibrantTheme.textColor,
-                                  fontSize: isSmallScreen ? 16 : 20,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: _selectedTab == 0 ? _buildQuizTab(isSmallScreen) : _buildTestTab(isSmallScreen),
-                  ),
-                ),
-              ],
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildQuizTab(isSmallScreen),
             );
           },
         ),
@@ -294,14 +243,6 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Lottie.asset(
-              'assets/animations/quiz_animation.json',
-              width: isSmallScreen ? 100 : 150,
-              height: isSmallScreen ? 100 : 150,
-              fit: BoxFit.contain,
-            ),
-          ),
           SizedBox(height: isSmallScreen ? 8 : 16),
           Text(
             'Get Started',
@@ -360,6 +301,14 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
               ),
             ],
           ),
+          Center(
+            child: Lottie.asset(
+              'assets/animations/quiz_animation.json',
+              width: isSmallScreen ? 100 : 150,
+              height: isSmallScreen ? 100 : 150,
+              fit: BoxFit.contain,
+            ),
+          ),
           SizedBox(height: isSmallScreen ? 8 : 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,6 +339,80 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
                   Icons.shuffle,
                   color: Colors.white,
                   size: isSmallScreen ? 20 : 24,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isSmallScreen ? 8 : 16),
+          // Filter Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 12,
+                      vertical: isSmallScreen ? 8 : 12,
+                    ),
+                  ),
+                  value: _selectedCategoryId,
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('All Categories'),
+                    ),
+                    ..._categories.map((category) => DropdownMenuItem<String>(
+                      value: category.id,
+                      child: Text(category.name),
+                    )),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategoryId = value;
+                    });
+                    _fetchRandomQuiz();
+                  },
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 8 : 16),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Difficulty',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 12,
+                      vertical: isSmallScreen ? 8 : 12,
+                    ),
+                  ),
+                  value: _selectedDifficulty,
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('All Difficulties'),
+                    ),
+                    ..._difficulties.map((difficulty) => DropdownMenuItem<String>(
+                      value: difficulty,
+                      child: Text(difficulty),
+                    )),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDifficulty = value;
+                    });
+                    _fetchRandomQuiz();
+                  },
                 ),
               ),
             ],
@@ -433,11 +456,7 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
                   },
                   child: Card(
                     child: InkWell(
-                      onTap: () => _navigateToInstructionScreen(
-                        quiz,
-                        category,
-                        difficulty,
-                      ),
+                      onTap: () => _navigateToInstructionScreen(quiz, category, difficulty),
                       child: Container(
                         padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
                         decoration: BoxDecoration(
@@ -503,128 +522,6 @@ class _QuizEntryScreenState extends State<QuizEntryScreen> with SingleTickerProv
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTestTab(bool isSmallScreen) {
-    return RefreshIndicator(
-      onRefresh: () async => setState(() {}),
-      color: VibrantTheme.primaryColor,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Active Tests',
-              style: VibrantTheme.themeData.textTheme.headlineLarge?.copyWith(
-                fontSize: isSmallScreen ? 20 : 24,
-              ),
-            ),
-            SizedBox(height: isSmallScreen ? 4 : 8),
-            _hasActiveTests
-                ? ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _tests.length,
-              itemBuilder: (context, index) {
-                final test = _tests[index];
-                return AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    final animation = CurvedAnimation(
-                      parent: _controller,
-                      curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
-                    );
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.5),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Card(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: const LinearGradient(
-                          colors: [Colors.white, Color(0xFFF9F9F9)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            test['title']!,
-                            style: VibrantTheme.themeData.textTheme.headlineMedium?.copyWith(
-                              fontSize: isSmallScreen ? 16 : 18,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 2 : 4),
-                          Text(
-                            test['description']!,
-                            style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
-                              fontSize: isSmallScreen ? 14 : 16,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 2 : 4),
-                          Text(
-                            'Difficulty: ${test['difficulty']}',
-                            style: VibrantTheme.themeData.textTheme.labelMedium?.copyWith(
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            )
-                : Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Lottie.asset(
-                    'assets/animations/empty_state_animation.json',
-                    width: isSmallScreen ? 100 : 150,
-                    height: isSmallScreen ? 100 : 150,
-                    fit: BoxFit.contain,
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 16),
-                  Text(
-                    'No active tests available',
-                    style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
-                      fontSize: isSmallScreen ? 14 : 16,
-                    ),
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 16),
-                  ElevatedButton(
-                    onPressed: () => setState(() {}),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isSmallScreen ? 12 : 16,
-                        vertical: isSmallScreen ? 8 : 12,
-                      ),
-                    ),
-                    child: Text(
-                      'Refresh',
-                      style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

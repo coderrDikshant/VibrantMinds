@@ -235,7 +235,7 @@ class _BlogScreenState extends State<BlogScreen> with TickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Lottie.asset(
-                      'assets/animations/empty_state.json', // Empty state animation
+                      'assets/animations/empty_state_animation.json', // Empty state animation
                       width: 150,
                       height: 150,
                     ),
