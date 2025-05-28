@@ -75,7 +75,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     setState(() {
       _currentIndex = index;
     });
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Close drawer
   }
 
   void _logout(BuildContext context) async {
@@ -103,8 +103,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     );
   }
 
-  Widget _buildDrawerItem(BuildContext context,
-      {required IconData icon, required String title, required int pageIndex}) {
+  Widget _buildDrawerItem(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required int pageIndex,
+      }) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFFD32F2F)),
       title: Text(
@@ -113,14 +117,11 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           fontSize: 16,
           fontWeight: FontWeight.w600,
           fontFamily: 'Roboto',
-          color: Colors.black,
         ),
       ),
       onTap: () => _navigateTo(pageIndex),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      tileColor: Colors.transparent,
-      hoverColor: Colors.grey[100],
     );
   }
 
@@ -153,30 +154,40 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     CircleAvatar(
                       radius: isSmallScreen ? 36 : 50,
                       backgroundColor: Colors.white,
-                      child: Icon(Icons.lightbulb,
-                          size: isSmallScreen ? 36 : 60,
-                          color: const Color(0xFFD32F2F)),
+                      child: Icon(
+                        Icons.lightbulb,
+                        size: isSmallScreen ? 36 : 60,
+                        color: const Color(0xFFD32F2F),
+                      ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      'VibrantMinds Technologies',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 16 : 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
+                    Flexible(
+                      child: Text(
+                        'VibrantMinds Technologies',
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 16 : 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      _userEmail.isNotEmpty
-                          ? _userEmail
-                          : 'user@vibrantminds.tech',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 12 : 14,
-                        color: Colors.white70,
-                        fontFamily: 'Roboto',
+                    Flexible(
+                      child: Text(
+                        _userEmail.isNotEmpty
+                            ? _userEmail
+                            : 'user@vibrantminds.tech',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 12 : 14,
+                          color: Colors.white70,
+                          fontFamily: 'Roboto',
+                        ),
                       ),
                     ),
                   ],
@@ -219,9 +230,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD32F2F),
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 10 : 12,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10 : 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     minimumSize: Size(double.infinity, isSmallScreen ? 45 : 50),
                   ),
@@ -274,8 +283,14 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                 top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Color(0xFFD32F2F), shape: BoxShape.circle),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD32F2F),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    '3',
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -292,7 +307,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           });
         },
         children: [
-          HomeScreen(navigateTo: (context, route) => _navigateTo(_getPageIndex(route))),
+          HomeScreen(navigateTo: (context, route) => _navigateTo(_getPageIndex(route)), username: _userName, email: _userEmail),
           QuizEntryScreen(name: _userName, email: _userEmail),
           SuccessStoryPage(userEmail: _userEmail, userName: _userName),
           BlogScreen(userEmail: _userEmail, userName: _userName),

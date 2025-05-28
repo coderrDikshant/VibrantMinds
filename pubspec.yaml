@@ -24,6 +24,7 @@ dependencies:
   google_fonts: ^6.2.1
   get: ^4.7.2
   intl: ^0.19.0
+  uuid: ^3.0.7
 #  riverpod: ^2.0.0
 #  flutter_3d_object: ^0.1.0
 
