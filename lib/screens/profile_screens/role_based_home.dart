@@ -9,7 +9,9 @@ import '../../screens/feedback_screen.dart';
 import '../../screens/contact_us_screen.dart';
 import '../../theme/vibrant_theme.dart';
 import '../../screens/bookmark_screen.dart';
-import '../../screens/notificaion_screen.dart';
+// import '../../screens/notification_screen.dart';
+import '../../screens/chatbot_screen.dart';
+import '../notificaion_screen.dart';
 
 class RoleBasedHome extends StatefulWidget {
   const RoleBasedHome({super.key});
@@ -25,6 +27,9 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   String _userEmail = '';
   String _userName = '';
   bool _loading = true;
+
+  bool _showChatBot = true;
+  Offset _chatBotPosition = const Offset(20, 400); // default position
 
   @override
   void initState() {
@@ -75,7 +80,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     setState(() {
       _currentIndex = index;
     });
-    Navigator.of(context).pop(); // Close drawer
+    Navigator.of(context).pop();
   }
 
   void _logout(BuildContext context) async {
@@ -103,12 +108,22 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     );
   }
 
-  Widget _buildDrawerItem(
-      BuildContext context, {
-        required IconData icon,
+  void talkWithChatbot(BuildContext context, String userEmail, String userName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatBotScreen(
+          userEmail: userEmail,
+          userName: userName,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(BuildContext context,
+      {required IconData icon,
         required String title,
-        required int pageIndex,
-      }) {
+        required int pageIndex}) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFFD32F2F)),
       title: Text(
@@ -122,6 +137,29 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       onTap: () => _navigateTo(pageIndex),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F)),
+            onPressed: () {
+              Navigator.of(ctx).pop(); // Close the dialog
+              _logout(context);        // Call logout function
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -200,13 +238,36 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Column(
                       children: [
-                        _buildDrawerItem(context, icon: Icons.home, title: 'Home', pageIndex: 0),
-                        _buildDrawerItem(context, icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
-                        _buildDrawerItem(context, icon: Icons.star, title: 'Success Stories', pageIndex: 2),
-                        _buildDrawerItem(context, icon: Icons.book, title: 'Blogs', pageIndex: 3),
-                        _buildDrawerItem(context, icon: Icons.work, title: 'Jobs', pageIndex: 4),
-                        _buildDrawerItem(context, icon: Icons.feedback, title: 'Feedback', pageIndex: 5),
-                        _buildDrawerItem(context, icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
+                        _buildDrawerItem(context,
+                            icon: Icons.home, title: 'Home', pageIndex: 0),
+                        _buildDrawerItem(context,
+                            icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
+                        _buildDrawerItem(context,
+                            icon: Icons.star,
+                            title: 'Success Stories',
+                            pageIndex: 2),
+                        _buildDrawerItem(context,
+                            icon: Icons.book, title: 'Blogs', pageIndex: 3),
+                        _buildDrawerItem(context,
+                            icon: Icons.work, title: 'Jobs', pageIndex: 4),
+                        _buildDrawerItem(context,
+                            icon: Icons.feedback,
+                            title: 'Feedback',
+                            pageIndex: 5),
+                        _buildDrawerItem(context,
+                            icon: Icons.contact_support,
+                            title: 'Contact Us',
+                            pageIndex: 6),
+                        SwitchListTile(
+                          title: const Text('Show ChatBot'),
+                          value: _showChatBot,
+                          onChanged: (value) {
+                            setState(() {
+                              _showChatBot = value;
+                            });
+                          },
+                          secondary: const Icon(Icons.smart_toy),
+                        ),
                       ],
                     ),
                   ),
@@ -218,7 +279,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   vertical: isSmallScreen ? 8 : 16,
                 ),
                 child: ElevatedButton.icon(
-                  onPressed: () => _logout(context),
+                  onPressed: () => _showLogoutConfirmationDialog(context),
                   icon: const Icon(Icons.logout, color: Colors.white),
                   label: Text(
                     'Logout',
@@ -231,10 +292,13 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD32F2F),
                     padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10 : 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     minimumSize: Size(double.infinity, isSmallScreen ? 45 : 50),
                   ),
                 ),
+
               ),
             ],
           ),
@@ -274,7 +338,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_none, color: Color(0xFFD32F2F)),
+                icon: const Icon(Icons.notifications_none,
+                    color: Color(0xFFD32F2F)),
                 onPressed: () => _showNotifications(context),
                 tooltip: 'Notifications',
               ),
@@ -289,7 +354,10 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   ),
                   child: const Text(
                     '3',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -299,21 +367,49 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         ],
       ),
       drawer: _buildDrawer(),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+      body: Stack(
         children: [
-          HomeScreen(navigateTo: (context, route) => _navigateTo(_getPageIndex(route)), username: _userName, email: _userEmail),
-          QuizEntryScreen(name: _userName, email: _userEmail),
-          SuccessStoryPage(userEmail: _userEmail, userName: _userName),
-          BlogScreen(userEmail: _userEmail, userName: _userName),
-          JobListScreen(userEmail: _userEmail),
-          FeedbackScreen(userEmail: _userEmail),
-          ContactUsScreen(userEmail: _userEmail),
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            children: [
+              HomeScreen(
+                  navigateTo: (context, route) =>
+                      _navigateTo(_getPageIndex(route)),
+                  username: _userName,
+                  email: _userEmail),
+              QuizEntryScreen(name: _userName, email: _userEmail),
+              SuccessStoryPage(userEmail: _userEmail, userName: _userName),
+              BlogScreen(userEmail: _userEmail, userName: _userName),
+              JobListScreen(userEmail: _userEmail),
+              FeedbackScreen(userEmail: _userEmail),
+              ContactUsScreen(userEmail: _userEmail),
+            ],
+          ),
+          if (_showChatBot)
+            Positioned(
+              left: _chatBotPosition.dx,
+              top: _chatBotPosition.dy,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    _chatBotPosition += details.delta;
+                  });
+                },
+                child: FloatingActionButton(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  onPressed: () {
+                    talkWithChatbot(context, _userEmail, _userName);
+                  },
+                  child: const Icon(Icons.chat, color: Colors.white),
+                  tooltip: 'Chat with us',
+                ),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: Container(
@@ -336,7 +432,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(0, Icons.home, Icons.home_outlined, "Home"),
-            _buildNavItem(1, Icons.quiz, Icons.help_outline, "Quiz"),
+            _buildNavItem(1, Icons.quiz, Icons.quiz_outlined, "Quiz"),
             _buildNavItem(2, Icons.star, Icons.star_outline, "Stories"),
             _buildNavItem(3, Icons.article, Icons.article_outlined, "Blog"),
             _buildNavItem(4, Icons.work, Icons.work_outline, "Jobs"),
@@ -346,7 +442,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _buildNavItem(
+      int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final bool isActive = _currentIndex == index;
     return GestureDetector(
       onTap: () {

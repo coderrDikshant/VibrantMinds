@@ -20,7 +20,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  final api_key = 'AIzaSyANcLW4GibTK4q29-9TP77chbhEPpik34k';
   // Initialize Amplify
   await _configureAmplify();
 
