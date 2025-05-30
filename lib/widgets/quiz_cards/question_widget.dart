@@ -5,7 +5,7 @@ import '../../theme/vibrant_theme.dart';
 class QuestionWidget extends StatefulWidget {
   final Question question;
   final int questionNumber;
-  final String quizSetTitle; // Renamed from quizTitle to quizSetTitle
+  final String quizSetTitle;
   final String? selectedAnswer;
   final Function(String) onAnswerSelected;
 
@@ -67,7 +67,7 @@ class _QuestionWidgetState extends State<QuestionWidget> with SingleTickerProvid
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Quiz Set: ${widget.quizSetTitle} - Question ${widget.questionNumber}', // Updated to include quizSetTitle
+                'Quiz Set: ${widget.quizSetTitle} - Question ${widget.questionNumber}',
                 style: VibrantTheme.themeData.textTheme.headlineMedium?.copyWith(
                   color: VibrantTheme.textColor,
                 ),
@@ -89,6 +89,7 @@ class _QuestionWidgetState extends State<QuestionWidget> with SingleTickerProvid
                     option: option,
                     isSelected: widget.selectedAnswer == option,
                     onTap: () => widget.onAnswerSelected(option),
+                    optionLetter: String.fromCharCode(65 + index), // Converts index to A, B, C, D
                   ),
                 );
               }).toList(),
@@ -104,11 +105,13 @@ class _OptionButton extends StatefulWidget {
   final String option;
   final bool isSelected;
   final VoidCallback onTap;
+  final String optionLetter;
 
   const _OptionButton({
     required this.option,
     required this.isSelected,
     required this.onTap,
+    required this.optionLetter,
   });
 
   @override
@@ -166,11 +169,24 @@ class _OptionButtonState extends State<_OptionButton> with SingleTickerProviderS
               color: widget.isSelected ? VibrantTheme.primaryColor : Colors.grey[300]!,
             ),
           ),
-          child: Text(
-            widget.option,
-            style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
-              color: widget.isSelected ? VibrantTheme.primaryColor : VibrantTheme.textColor,
-            ),
+          child: Row(
+            children: [
+              Text(
+                '${widget.optionLetter}. ',
+                style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
+                  color: widget.isSelected ? VibrantTheme.primaryColor : VibrantTheme.textColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  widget.option,
+                  style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
+                    color: widget.isSelected ? VibrantTheme.primaryColor : VibrantTheme.textColor,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
