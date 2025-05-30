@@ -87,19 +87,52 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
       setState(() {
         _likedStories[story.id] = true;
         // story.likes++;
-        _animationControllers.putIfAbsent(
-          story.id,
-              () => AnimationController(
-            vsync: this,
-            duration: const Duration(milliseconds: 800),
-          )..forward().then((_) {
-            Future.delayed(const Duration(milliseconds: 1000), () {
-              if (mounted) {
-                _animationControllers[story.id]?.reverse();
-              }
-            });
-          }),
+        // Remove existing controller if any
+        _animationControllers[story.id]?.dispose();
+        _animationControllers.remove(story.id);
+
+        // Create new animation controller
+        final controller = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 800),
         );
+
+        int cycleCount = 0;
+        bool isAnimationActive = true;
+
+        // Animation loop
+        void playAnimation() {
+          if (!mounted || !isAnimationActive || cycleCount >= 3) {
+            controller.dispose();
+            if (mounted) {
+              setState(() {
+                _animationControllers.remove(story.id);
+              });
+            }
+            return;
+          }
+          controller.forward().then((_) {
+            cycleCount++;
+            controller.reverse().then((_) {
+              playAnimation();
+            });
+          });
+        }
+
+        _animationControllers[story.id] = controller;
+        playAnimation();
+
+        // Force stop after 2 seconds
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && isAnimationActive) {
+            isAnimationActive = false;
+            controller.stop();
+            controller.dispose();
+            setState(() {
+              _animationControllers.remove(story.id);
+            });
+          }
+        });
       });
     } catch (e) {
       if (mounted) {
@@ -188,6 +221,274 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
     setState(() {
       _isCommentSectionExpanded[storyId] = !(_isCommentSectionExpanded[storyId] ?? false);
     });
+  }
+
+  void _showStoryDialog(BuildContext context, SuccessStory story) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+            maxWidth: 600,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Colors.white, Color(0xFFF9F9F9)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (story.imageUrl.isNotEmpty)
+                        GestureDetector(
+                          onDoubleTap: () => _handleLike(story),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                child: Image.network(
+                                  story.imageUrl,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(color: VibrantTheme.primaryColor),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.error, color: VibrantTheme.errorColor),
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (_animationControllers[story.id] != null)
+                                FadeTransition(
+                                  opacity: _animationControllers[story.id]!.drive(
+                                    Tween<double>(begin: 1.0, end: 0.0).chain(
+                                      CurveTween(curve: Curves.easeOut),
+                                    ),
+                                  ),
+                                  child: ScaleTransition(
+                                    scale: _animationControllers[story.id]!.drive(
+                                      Tween<double>(begin: 1.2, end: 0.8).chain(
+                                        CurveTween(curve: Curves.easeOut),
+                                      ),
+                                    ),
+                                    child: Lottie.asset(
+                                      'assets/animations/like_animation.json',
+                                      width: 80,
+                                      height: 80,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              story.title,
+                              style: VibrantTheme.themeData.textTheme.headlineLarge?.copyWith(
+                                fontFamily: 'Poppins',
+                                color: VibrantTheme.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              story.description,
+                              style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
+                                fontFamily: 'Roboto',
+                                color: VibrantTheme.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    _likedStories[story.id]! ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                                    color: _likedStories[story.id]! ? VibrantTheme.primaryColor : Colors.grey,
+                                  ),
+                                  onPressed: () => _handleLike(story),
+                                ),
+                                Text(
+                                  '${story.likes}',
+                                  style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.comment,
+                                    color: _isCommentSectionExpanded[story.id]! ? VibrantTheme.primaryColor : Colors.grey,
+                                  ),
+                                  onPressed: () => _toggleCommentSection(story.id),
+                                ),
+                                Text(
+                                  '${story.commentCount}',
+                                  style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            AnimatedCrossFade(
+                              firstChild: const SizedBox.shrink(),
+                              secondChild: Column(
+                                children: [
+                                  TextField(
+                                    controller: _commentControllers[story.id],
+                                    decoration: InputDecoration(
+                                      hintText: 'Add a comment...',
+                                      hintStyle: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                        fontFamily: 'Roboto',
+                                        color: Colors.grey,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: const BorderSide(color: VibrantTheme.primaryColor, width: 2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(Icons.send, color: VibrantTheme.primaryColor),
+                                        onPressed: () => _postComment(story),
+                                      ),
+                                    ),
+                                    style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                      fontFamily: 'Roboto',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  FutureBuilder<List<Comment>>(
+                                    future: _commentsFutures[story.id],
+                                    builder: (context, commentSnapshot) {
+                                      if (commentSnapshot.connectionState == ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(color: VibrantTheme.primaryColor),
+                                        );
+                                      }
+                                      if (commentSnapshot.hasError) {
+                                        return Text(
+                                          'Error loading comments: ${commentSnapshot.error}',
+                                          style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                            fontFamily: 'Roboto',
+                                            color: VibrantTheme.errorColor,
+                                          ),
+                                        );
+                                      }
+
+                                      final comments = commentSnapshot.data ?? [];
+
+                                      if (comments.isEmpty) {
+                                        return Text(
+                                          'No comments yet',
+                                          style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                            fontFamily: 'Roboto',
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      }
+
+                                      return ListView.builder(
+                                        shrinkWrap: true,
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        itemCount: comments.length,
+                                        itemBuilder: (context, commentIndex) {
+                                          final comment = comments[commentIndex];
+                                          return ListTile(
+                                            title: Text(
+                                              comment.authorName,
+                                              style: VibrantTheme.themeData.textTheme.headlineMedium?.copyWith(
+                                                fontFamily: 'Poppins',
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              comment.content,
+                                              style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                                                fontFamily: 'Roboto',
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                IconButton(
+                                                  icon: Icon(
+                                                    comment.userLiked ? Icons.favorite : Icons.favorite_border,
+                                                    color: comment.userLiked ? VibrantTheme.primaryColor : Colors.grey,
+                                                    size: 20,
+                                                  ),
+                                                  onPressed: () => _handleCommentLike(story.id, comment),
+                                                ),
+                                                Text(
+                                                  '${comment.likes}',
+                                                  style: VibrantTheme.themeData.textTheme.bodySmall?.copyWith(
+                                                    fontFamily: 'Roboto',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                              crossFadeState: _isCommentSectionExpanded[story.id]!
+                                  ? CrossFadeState.showSecond
+                                  : CrossFadeState.showFirst,
+                              duration: const Duration(milliseconds: 300),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Close',
+                    style: VibrantTheme.themeData.textTheme.bodyMedium?.copyWith(
+                      color: VibrantTheme.primaryColor,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -395,7 +696,16 @@ class _StoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Truncate description to 100 characters for preview
+    final truncatedDescription = story.description.length > 100
+        ? '${story.description.substring(0, 100)}...'
+        : story.description;
+
     return GestureDetector(
+      onTap: () {
+        // Call the dialog from the state class
+        (context.findAncestorStateOfType<_SuccessStoryPageState>())?._showStoryDialog(context, story);
+      },
       onTapDown: (_) => cardAnimationController.forward(),
       onTapUp: (_) => cardAnimationController.reverse(),
       onTapCancel: () => cardAnimationController.reverse(),
@@ -490,7 +800,7 @@ class _StoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        story.description,
+                        truncatedDescription,
                         style: VibrantTheme.themeData.textTheme.bodyLarge?.copyWith(
                           fontFamily: 'Roboto',
                           color: VibrantTheme.textColor,
