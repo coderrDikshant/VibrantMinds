@@ -9,9 +9,9 @@ import '../../screens/feedback_screen.dart';
 import '../../screens/contact_us_screen.dart';
 import '../../theme/vibrant_theme.dart';
 import '../../screens/bookmark_screen.dart';
-// import '../../screens/notification_screen.dart';
+import '../../screens/notificaion_screen.dart';
 import '../../screens/chatbot_screen.dart';
-import '../notificaion_screen.dart';
+import '../../screens/view_profile_screen.dart'; // Added import for profile screen
 
 class RoleBasedHome extends StatefulWidget {
   const RoleBasedHome({super.key});
@@ -29,7 +29,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   bool _loading = true;
 
   bool _showChatBot = true;
-  Offset _chatBotPosition = const Offset(20, 400); // default position
+  Offset _chatBotPosition = const Offset(20, 400);
 
   @override
   void initState() {
@@ -97,7 +97,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   void _bookmark(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => BookmarkScreen()),
+      MaterialPageRoute(builder: (_) => BookmarkScreen(userEmail: _userEmail,)),
     );
   }
 
@@ -139,6 +139,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
+
   void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -153,8 +154,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F)),
             onPressed: () {
-              Navigator.of(ctx).pop(); // Close the dialog
-              _logout(context);        // Call logout function
+              Navigator.of(ctx).pop();
+              _logout(context);
             },
             child: const Text('Logout'),
           ),
@@ -239,6 +240,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     child: Column(
                       children: [
                         _buildDrawerItem(context,
+                            icon: Icons.person, title: 'View Profile', pageIndex: 7), // Added Profile item
+                        _buildDrawerItem(context,
                             icon: Icons.home, title: 'Home', pageIndex: 0),
                         _buildDrawerItem(context,
                             icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
@@ -298,7 +301,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     minimumSize: Size(double.infinity, isSmallScreen ? 45 : 50),
                   ),
                 ),
-
               ),
             ],
           ),
@@ -388,6 +390,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
               JobListScreen(userEmail: _userEmail),
               FeedbackScreen(userEmail: _userEmail),
               ContactUsScreen(userEmail: _userEmail),
+              ViewProfileScreen(userEmail: _userEmail, userName: _userName), // Added Profile screen
             ],
           ),
           if (_showChatBot)
@@ -491,6 +494,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         return 5;
       case 'Contact Us':
         return 6;
+      case 'View Profile':
+        return 7; // Added Profile route
       default:
         return _currentIndex;
     }
