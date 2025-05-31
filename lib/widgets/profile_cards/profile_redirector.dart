@@ -25,6 +25,11 @@ class _ProfileRedirectorState extends State<ProfileRedirector> {
   }
 
   Future<void> _checkProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
       final idToken = session.userPoolTokensResult.value.idToken;
@@ -48,12 +53,22 @@ class _ProfileRedirectorState extends State<ProfileRedirector> {
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
         final data = jsonDecode(responseBody['body']);
+
         final profileComplete = data['profileComplete'] ?? false;
 
+        // Safely access personalInfo, handle null profile
+        final personalInfo = data['profile']?['personalInfo'];
+        final fullName = personalInfo?['firstName'] ?? '';
+      
         if (profileComplete) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const RoleBasedHome()),
+            MaterialPageRoute(
+              builder: (_) => RoleBasedHome(
+                firstName: fullName,
+                lastName: fullName,
+              ),
+            ),
           );
         } else {
           Navigator.pushReplacement(
@@ -90,6 +105,7 @@ class _ProfileRedirectorState extends State<ProfileRedirector> {
                   Text(
                     _errorMessage ?? 'Unknown error',
                     style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(

@@ -14,7 +14,15 @@ import '../../screens/chatbot_screen.dart';
 import '../../screens/view_profile_screen.dart'; // Added import for profile screen
 
 class RoleBasedHome extends StatefulWidget {
-  const RoleBasedHome({super.key});
+  final String firstName;
+  final String lastName;
+
+  const RoleBasedHome({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+  });
+
 
   @override
   State<RoleBasedHome> createState() => _RoleBasedHomeState();
@@ -25,7 +33,10 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   final PageController _pageController = PageController();
 
   String _userEmail = '';
-  String _userName = '';
+ String get _firstName => widget.firstName;
+String get _lastName => widget.lastName;
+
+
   bool _loading = true;
 
   bool _showChatBot = true;
@@ -61,12 +72,11 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           value: '',
         ),
       ).value;
+    setState(() {
+  _userEmail = email;
+  _loading = false;
+});
 
-      setState(() {
-        _userEmail = email;
-        _userName = name;
-        _loading = false;
-      });
     } catch (e) {
       safePrint("Failed to fetch user attributes: $e");
       setState(() {
@@ -379,18 +389,25 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
               });
             },
             children: [
-              HomeScreen(
-                  navigateTo: (context, route) =>
-                      _navigateTo(_getPageIndex(route)),
-                  username: _userName,
-                  email: _userEmail),
-              QuizEntryScreen(name: _userName, email: _userEmail),
-              SuccessStoryPage(userEmail: _userEmail, userName: _userName),
-              BlogScreen(userEmail: _userEmail, userName: _userName),
-              JobListScreen(userEmail: _userEmail),
-              FeedbackScreen(userEmail: _userEmail),
-              ContactUsScreen(userEmail: _userEmail),
-              ViewProfileScreen(userEmail: _userEmail, userName: _userName), // Added Profile screen
+             HomeScreen(
+  navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
+  username: _firstName,  // only first name here
+  email: _userEmail,
+),
+
+
+QuizEntryScreen(name: _firstName, email: _userEmail),
+
+SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
+
+BlogScreen(userEmail: _userEmail, userName: _firstName),
+JobListScreen(userEmail: _userEmail),        // <-- index 4
+  FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
+  ContactUsScreen(userEmail: _userEmail),                           // <-- index 6
+  ViewProfileScreen(userEmail: _userEmail, userName: _firstName),
+
+
+ // Added Profile screen
             ],
           ),
           if (_showChatBot)
@@ -406,7 +423,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                 child: FloatingActionButton(
                   backgroundColor: const Color(0xFFD32F2F),
                   onPressed: () {
-                    talkWithChatbot(context, _userEmail, _userName);
+                    talkWithChatbot(context, _userEmail, _firstName);
                   },
                   child: const Icon(Icons.chat, color: Colors.white),
                   tooltip: 'Chat with us',

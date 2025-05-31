@@ -5,8 +5,7 @@ import 'dart:convert';
 import '../../widgets/profile_cards/personal_info_section.dart';
 import '../../widgets/profile_cards/education_section.dart';
 import '../../widgets/profile_cards/experience_section.dart';
-import 'role_based_home.dart';
-
+import'../../widgets/profile_cards/profile_redirector.dart';
 class CompleteProfileScreen extends StatefulWidget {
   final String email;
   const CompleteProfileScreen({super.key, required this.email});
@@ -168,28 +167,31 @@ Future<bool> _submitProfileCompletion() async {
     }
   }
 
-  void _onFinish() async {
+ void _onFinish() async {
+  setState(() {
+    _isSubmitting = true;
+    _errorMessage = null;
+  });
+
+  final success = await _submitProfileCompletion();
+
+  if (!mounted) return;
+
+  if (success) {
+    final personalInfo = _collectedData['personalInfo'];
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileRedirector(),
+      ),
+    );
+  } else {
     setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
+      _errorMessage = 'Failed to complete profile. Please try again.';
+      _isSubmitting = false;
     });
-
-    final success = await _submitProfileCompletion();
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RoleBasedHome()),
-      );
-    } else {
-      setState(() {
-        _errorMessage = 'Failed to complete profile. Please try again.';
-        _isSubmitting = false;
-      });
-    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +203,7 @@ Future<bool> _submitProfileCompletion() async {
           _collectedData['personalInfo'] = data;
         },
       ),
-      EducationSection(
+     EducationSection(
         key: _educationKey,
         onSaved: (data) {
           _collectedData['education'] = data;
