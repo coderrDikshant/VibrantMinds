@@ -129,31 +129,41 @@ class JobDetailsScreen extends StatelessWidget {
          
 
             SizedBox(height: 24),
-            if (job['canApply'] == true)
-              Center(
-                child: ElevatedButton(
-  onPressed: () {
-    final email = userEmail; 
-    final id = job['id'] ?? '';
-    final postedAt = job['postedAt']?.toString() ?? '';
+   if (job['canApply'] == true)
+  Center(
+    child: ElevatedButton(
+      onPressed: () {
+        final email = userEmail; 
+        final id = job['id'] ?? '';
+        final postedAt = job['postedAt']?.toString() ?? '';
 
-    if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Missing required application data')),
-      );
-      return;
-    }
+        if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Missing required application data')),
+          );
+          return;
+        }
 
-    submitApplication(context, email, id, postedAt);
-  },
-  child: Text('Apply Now'),
-  style: ElevatedButton.styleFrom(
-    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-    textStyle: TextStyle(fontSize: 16),
+        submitApplication(context, email, id, postedAt);
+      },
+      child: Text('Apply Now'),
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        textStyle: TextStyle(fontSize: 16),
+      ),
+    ),
+  )
+else
+  Padding(
+    padding: const EdgeInsets.only(top: 16.0),
+    child: Center(
+      child: Text(
+        'Only for VibrantMinds students',
+        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    ),
   ),
-),
 
-              ),
           ],
         ),
       ),
