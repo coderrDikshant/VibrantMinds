@@ -1,14 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 
 // New JobDetailsScreen widget
-class JobDetailsScreen extends StatelessWidget {
+class JobDetailsScreen extends StatefulWidget {
   final dynamic job;
   final String userEmail;
-  
 
-  const JobDetailsScreen({required this.job,required this.userEmail});
+  const JobDetailsScreen({required this.job, required this.userEmail});
+
+  @override
+  _JobDetailsScreenState createState() => _JobDetailsScreenState();
+}
+
+class _JobDetailsScreenState extends State<JobDetailsScreen> {
+  bool _isApplying = false;
 
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return 'Date not available';
@@ -20,57 +27,63 @@ class JobDetailsScreen extends StatelessWidget {
     }
   }
 
- Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
-  final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
+  Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
+    setState(() {
+      _isApplying = true;
+    });
 
-  final innerBody = jsonEncode({
-    "email": email,
-    "id": id,
-    "postedAt": postedAt,
-  });
+    final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
 
-  final fullBody = jsonEncode({
-    "body": innerBody
-  });
+    final innerBody = jsonEncode({
+      "email": email,
+      "id": id,
+      "postedAt": postedAt,
+    });
 
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: fullBody,
-    );
+    final fullBody = jsonEncode({"body": innerBody});
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: fullBody,
+      );
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
-      if (responseJson['statusCode'] == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Application submitted successfully!')),
-        );
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseJson = jsonDecode(response.body);
+        if (responseJson['statusCode'] == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Application submitted successfully!')),
+          );
+        } else {
+          final body = jsonDecode(responseJson['body']);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
+          );
+        }
       } else {
-        final body = jsonDecode(responseJson['body']);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
+          SnackBar(content: Text('Failed to submit application: ${response.statusCode}')),
         );
       }
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit application: ${response.statusCode}')),
+        SnackBar(content: Text('Error submitting application: $e')),
       );
+    } finally {
+      setState(() {
+        _isApplying = false;
+      });
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error submitting application: $e')),
-    );
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
+    final job = widget.job;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(job['jobTitle'] ?? 'Job Details'),
@@ -81,8 +94,8 @@ class JobDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-               SizedBox(height: 16),
-              if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+            SizedBox(height: 16),
+            if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
               Container(
                 height: 200,
                 width: double.infinity,
@@ -126,50 +139,59 @@ class JobDetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(job['eligibility'] ?? 'No eligibility criteria'),
-         
-
             SizedBox(height: 24),
-   if (job['canApply'] == true)
-  Center(
-    child: ElevatedButton(
-      onPressed: () {
-        final email = userEmail; 
-        final id = job['id'] ?? '';
-        final postedAt = job['postedAt']?.toString() ?? '';
+            if (job['canApply'] == true)
+              Center(
+                child: ElevatedButton(
+                  onPressed: _isApplying
+                      ? null // disable button when loading
+                      : () {
+                          final email = widget.userEmail;
+                          final id = job['id'] ?? '';
+                          final postedAt = job['postedAt']?.toString() ?? '';
 
-        if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Missing required application data')),
-          );
-          return;
-        }
+                          if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Missing required application data')),
+                            );
+                            return;
+                          }
 
-        submitApplication(context, email, id, postedAt);
-      },
-      child: Text('Apply Now'),
-      style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-        textStyle: TextStyle(fontSize: 16),
-      ),
-    ),
-  )
-else
-  Padding(
-    padding: const EdgeInsets.only(top: 16.0),
-    child: Center(
-      child: Text(
-        'Only for VibrantMinds students',
-        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
-      ),
-    ),
-  ),
-
+                          submitApplication(context, email, id, postedAt);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                  child: _isApplying
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Text('Apply Now'),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: Text(
+                    'Only for VibrantMinds students',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 }
+
 
 class JobListScreen extends StatefulWidget {
   final String userEmail;
@@ -258,12 +280,17 @@ void didChangeDependencies() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Available Job Posts'),
-        centerTitle: true,
+    
+     body: isLoading
+  ? Center(
+      child: Lottie.asset(
+        'assets/animations/loading_animation.json',
+        width: 200,
+        height: 200,
+        fit: BoxFit.contain,
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
+    )
+
           : error.isNotEmpty
               ? Center(child: Text(error, style: TextStyle(color: const Color.fromARGB(255, 245, 57, 43))))
               : jobs.isEmpty
