@@ -1,141 +1,112 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:http/http.dart' as http;
-import '../../theme/vibrant_theme.dart';
-import '../../screens/job_screen/job_list_screen.dart';
+import 'dart:convert';
 
-class BookmarkScreen extends StatefulWidget {
+class AppliedJobsScreen extends StatefulWidget {
   final String userEmail;
 
-  const BookmarkScreen({required this.userEmail, super.key});
+  const AppliedJobsScreen({super.key, required this.userEmail});
 
   @override
-  _BookmarkScreenState createState() => _BookmarkScreenState();
+  _AppliedJobsScreenState createState() => _AppliedJobsScreenState();
 }
 
-class _BookmarkScreenState extends State<BookmarkScreen> {
-  List<dynamic> appliedJobs = [];
+class _AppliedJobsScreenState extends State<AppliedJobsScreen> {
+  List<Map<String, dynamic>> jobs = [];
   bool isLoading = true;
   String error = '';
 
   @override
   void initState() {
     super.initState();
-    fetchAppliedJobs();
+    loadAppliedJobs();
   }
 
-  Future<void> fetchAppliedJobs() async {
-    if (widget.userEmail.isEmpty) {
+Future<void> loadAppliedJobs() async {
+  try {
+    final appliedUrl = Uri.parse(
+      'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/devlopment/view_applications',
+    );
+
+    final appliedResponse = await http.post(
+      appliedUrl,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "body": jsonEncode({
+          "email": widget.userEmail,
+        })
+      }),
+    );
+
+    if (appliedResponse.statusCode != 200) {
+      throw Exception('Failed to fetch applied job IDs');
+    }
+
+    final appliedDataRaw = jsonDecode(appliedResponse.body);
+    final appliedData = appliedDataRaw['body'] != null
+        ? jsonDecode(appliedDataRaw['body'])
+        : appliedDataRaw;
+
+    final companiesApplied = appliedData['companiesApplied'];
+
+    // If null or empty, set empty list and stop loading
+    if (companiesApplied == null || companiesApplied.isEmpty) {
       setState(() {
-        error = 'No email provided';
+        jobs = [];
         isLoading = false;
       });
       return;
     }
+      final jobIds = companiesApplied
+          .map((item) => item['jobId']?.toString())
+          .where((id) => id != null && id.isNotEmpty)
+          .toList();
 
-    try {
-      final apiUrl = Uri.parse(
-        'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/get_applied_jobs',
-      );
-
-      final nestedBody = jsonEncode({
-        "email": widget.userEmail,
-      });
-
-      final postBody = jsonEncode({
-        "body": nestedBody,
-      });
-
-      final response = await http.post(
-        apiUrl,
-        headers: {'Content-Type': 'application/json'},
-        body: postBody,
-      );
-
-      if (response.statusCode == 200) {
-        dynamic responseData = jsonDecode(response.body);
-
-        if (responseData is String) {
-          responseData = jsonDecode(responseData);
-        } else if (responseData['body'] != null) {
-          responseData = jsonDecode(responseData['body']);
-        }
-
-        if (responseData['error'] != null) {
-          throw Exception(responseData['error']);
-        }
-
+      if (jobIds.isEmpty) {
         setState(() {
-          appliedJobs = responseData['jobs'] ?? [];
           isLoading = false;
         });
-      } else {
-        throw Exception('API request failed with status ${response.statusCode}');
+        return;
       }
-    } catch (e) {
+
+      final detailsUrl = Uri.parse(
+        'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type',
+      );
+
+      final nestedBody = jsonEncode({"email": widget.userEmail});
+      final detailsResponse = await http.post(
+        detailsUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"body": nestedBody}),
+      );
+
+      if (detailsResponse.statusCode != 200) {
+        throw Exception('Failed to fetch job details');
+      }
+
+      dynamic detailsData = jsonDecode(detailsResponse.body);
+      if (detailsData is String) detailsData = jsonDecode(detailsData);
+      if (detailsData['body'] != null) detailsData = jsonDecode(detailsData['body']);
+      if (detailsData['error'] != null) throw Exception(detailsData['error']);
+
+      final allJobs = (detailsData['jobs'] as List<dynamic>).cast<Map<String, dynamic>>();
+
+      final matchedJobs = allJobs.where((job) => jobIds.contains(job['id'])).toList();
+
+      for (var job in matchedJobs) {
+        job['hover'] = false;
+      }
+
       setState(() {
-        error = 'Error: ${e.toString()}';
+        jobs = matchedJobs;
         isLoading = false;
       });
-    }
-  }
-
-  Future<void> withdrawApplication(String jobId, String postedAt) async {
-    try {
-      final url = Uri.parse(
-        'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/withdraw_application',
-      );
-
-      final innerBody = jsonEncode({
-        "email": widget.userEmail,
-        "id": jobId,
-        "postedAt": postedAt,
-      });
-
-      final fullBody = jsonEncode({
-        "body": innerBody,
-      });
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: fullBody,
-      );
-
-      if (response.statusCode == 200) {
-        final responseJson = jsonDecode(response.body);
-        if (responseJson['statusCode'] == 200) {
-          setState(() {
-            appliedJobs.removeWhere((job) => job['id'] == jobId);
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Application withdrawn successfully!')),
-          );
-        } else {
-          final body = jsonDecode(responseJson['body']);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to withdraw application: ${response.statusCode}')),
-        );
-      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error withdrawing application: $e')),
-      );
-    }
-  }
-
-  String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return 'Date not available';
-    try {
-      final date = DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp.toString()));
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return 'Invalid date';
+      setState(() {
+        error = 'Error occurred: $e';
+        isLoading = false;
+      });
+      print('Error: $e');
     }
   }
 
@@ -145,135 +116,79 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
       appBar: AppBar(
         title: const Text('Applied Jobs'),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        titleTextStyle: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF000000),
-          fontFamily: 'Poppins',
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFFD32F2F)),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error.isNotEmpty
-          ? Center(child: Text(error, style: const TextStyle(color: Color(0xFFD32F2F))))
-          : appliedJobs.isEmpty
-          ? const Center(
-        child: Text(
-          'No applied jobs yet!',
-          style: TextStyle(fontSize: 16, fontFamily: 'Roboto'),
-        ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: appliedJobs.length,
-        itemBuilder: (context, index) {
-          final job = appliedJobs[index];
-          return MouseRegion(
-            onEnter: (_) => setState(() => job['hover'] = true),
-            onExit: (_) => setState(() => job['hover'] = false),
-            child: AnimatedScale(
-              scale: job['hover'] == true ? 1.02 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: Card(
-                elevation: job['hover'] == true ? 12 : 4,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            job['imageUrl'],
-                            height: 150,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.broken_image, size: 48),
-                                  Text('Failed to load image'),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      Text(
-                        job['jobTitle'] ?? 'No Title',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      if (job['postedAt'] != null)
-                        Text(
-                          _formatDate(job['postedAt']),
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      const SizedBox(height: 8),
-                      Text(
-                        job['companyname'] ?? 'No Company',
-                        style: const TextStyle(fontSize: 16, color: Colors.blue),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              splashColor: Colors.orangeAccent.withOpacity(0.3),
-                              onTap: () async {
-                                await Future.delayed(const Duration(milliseconds: 100));
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => JobDetailsScreen(
-                                      job: job,
-                                      userEmail: widget.userEmail,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD32F2F),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                child: const Text(
-                                  'View Details',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Color(0xFFD32F2F)),
-                            onPressed: () {
-                              withdrawApplication(job['id'] ?? '', job['postedAt']?.toString() ?? '');
-                            },
-                            tooltip: 'Withdraw Application',
-                          ),
-                        ],
-                      ),
-                    ],
+              ? Center(child: Text(error, style: const TextStyle(color: Colors.red)))
+              : jobs.isEmpty
+                  ? const Center(child: Text('No jobs found.'))
+                  : ListView.builder(
+                      itemCount: jobs.length,
+                      itemBuilder: (context, index) {
+  final job = jobs[index];
+  return MouseRegion(
+    onEnter: (_) => setState(() => jobs[index]['hover'] = true),
+    onExit: (_) => setState(() => jobs[index]['hover'] = false),
+    child: AnimatedScale(
+      scale: job['hover'] == true ? 1.02 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: Card(
+        elevation: job['hover'] == true ? 12 : 4,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Stack(
+          children: [
+            // "Applied" label top-left
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                
+                child: const Text(
+                  
+                  'Applied',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-          );
-        },
+
+            // Main content with some padding so it doesn't overlap "Applied"
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    job['jobTitle']?.toString() ?? 'No Title',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    job['companyname']?.toString() ?? 'No Company',
+                    style: const TextStyle(fontSize: 16, color: Colors.blue),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    ),
+  );
+},
+
+                    ),
     );
   }
 }

@@ -97,7 +97,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   void _bookmark(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => BookmarkScreen(userEmail: _userEmail,)),
+      MaterialPageRoute(builder: (_) => AppliedJobsScreen(userEmail: _userEmail)),
     );
   }
 
