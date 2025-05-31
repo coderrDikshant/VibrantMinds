@@ -166,7 +166,6 @@ class EducationSectionState extends State<EducationSection> {
         'education': [
           {
             'tenthPassingYear': _tenthYear,
-            'tenthPercentage': _tenthPercentage,
             'twelfthPassingYear': _twelfthYear,
             'twelfthPercentage': _twelfthPercentage,
             'diplomaCompleted': _completedDiploma,
