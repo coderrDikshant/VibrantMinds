@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 
-// New JobDetailsScreen widget
 class JobDetailsScreen extends StatefulWidget {
   final dynamic job;
   final String userEmail;
@@ -49,24 +48,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         body: fullBody,
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      final responseJson = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final responseJson = jsonDecode(response.body);
-        if (responseJson['statusCode'] == 200) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Application submitted successfully!')),
-          );
-        } else {
-          final body = jsonDecode(responseJson['body']);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
-          );
-        }
-      } else {
+      if (response.statusCode == 200 && responseJson['statusCode'] == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit application: ${response.statusCode}')),
+          SnackBar(content: Text('Application submitted successfully!')),
+        );
+      } else {
+        final body = jsonDecode(responseJson['body']);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
         );
       }
     } catch (e) {
@@ -94,7 +85,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 16),
             if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
               Container(
                 height: 200,
@@ -116,6 +106,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   },
                 ),
               ),
+            SizedBox(height: 16),
             Text(
               job['companyname'] ?? '',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -126,17 +117,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               style: TextStyle(color: Colors.grey),
             ),
             SizedBox(height: 16),
-            Text(
-              "Description:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            Text("Description:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Text(job['description'] ?? 'No description available'),
             SizedBox(height: 16),
-            Text(
-              "Eligibility Criteria:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            Text("Eligibility Criteria:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Text(job['eligibility'] ?? 'No eligibility criteria'),
             SizedBox(height: 24),
@@ -144,7 +129,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: _isApplying
-                      ? null // disable button when loading
+                      ? null
                       : () {
                           final email = widget.userEmail;
                           final id = job['id'] ?? '';
@@ -159,26 +144,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
                           submitApplication(context, email, id, postedAt);
                         },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
-                  ),
                   child: _isApplying
                       ? SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                         )
                       : Text('Apply Now'),
                 ),
               )
             else
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Center(
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
                     'Only for VibrantMinds students',
                     style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
@@ -192,11 +170,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 }
 
+// -------------------- JobListScreen ------------------------
 
 class JobListScreen extends StatefulWidget {
   final String userEmail;
 
-  JobListScreen({required this.userEmail});
+  const JobListScreen({required this.userEmail});
 
   @override
   _JobListScreenState createState() => _JobListScreenState();
@@ -206,14 +185,6 @@ class _JobListScreenState extends State<JobListScreen> {
   List<dynamic> jobs = [];
   bool isLoading = true;
   String error = '';
-
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  for (var job in jobs) {
-    job['hover'] = false;
-  }
-}
 
   @override
   void initState() {
@@ -235,13 +206,8 @@ void didChangeDependencies() {
         'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type',
       );
 
-      final nestedBody = jsonEncode({
-        "email": widget.userEmail,
-      });
-
-      final postBody = jsonEncode({
-        "body": nestedBody,
-      });
+      final nestedBody = jsonEncode({"email": widget.userEmail});
+      final postBody = jsonEncode({"body": nestedBody});
 
       final response = await http.post(
         apiUrl,
@@ -277,130 +243,6 @@ void didChangeDependencies() {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-    
-     body: isLoading
-  ? Center(
-      child: Lottie.asset(
-        'assets/animations/loading_animation.json',
-        width: 200,
-        height: 200,
-        fit: BoxFit.contain,
-      ),
-    )
-
-          : error.isNotEmpty
-              ? Center(child: Text(error, style: TextStyle(color: const Color.fromARGB(255, 245, 57, 43))))
-              : jobs.isEmpty
-                  ? Center(child: Text('No jobs available'))
-                  : ListView.builder(
-  itemCount: jobs.length,
-  itemBuilder: (context, index) {
-    final job = jobs[index];
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 1, end: 1),
-      duration: Duration(milliseconds: 200),
-      builder: (context, scale, child) {
-        return MouseRegion(
-          onEnter: (_) => setState(() => jobs[index]['hover'] = true),
-          onExit: (_) => setState(() => jobs[index]['hover'] = false),
-          child: AnimatedScale(
-            scale: job['hover'] == true ? 1.02 : 1.0,
-            duration: Duration(milliseconds: 200),
-            child: Card(
-              elevation: job['hover'] == true ? 12 : 4,
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          job['imageUrl'],
-                          height: 150,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.broken_image, size: 48),
-                                Text('Failed to load image'),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    SizedBox(height: 12),
-                    Text(
-                      job['jobTitle'] ?? 'No Title',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    if (job['postedAt'] != null)
-                      Text(
-                        _formatDate(job['postedAt']),
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    SizedBox(height: 8),
-                    Text(
-                      job['companyname'] ?? 'No Company',
-                      style: TextStyle(fontSize: 16, color: Colors.blue),
-                    ),
-                    SizedBox(height: 12),
-                    Align(
-  alignment: Alignment.centerRight,
-  child: Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(8),
-      splashColor: Colors.orangeAccent.withOpacity(0.3), // Visible ripple
-      onTap: () async {
-        await Future.delayed(Duration(milliseconds: 100)); // Delay for ripple effect
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(job: job,userEmail: widget.userEmail),
-          ),
-        );
-      },
-      child: Ink(
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 245, 57, 43), // Orange button
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Text(
-          'View Details',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    ),
-  ),
-),
-
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  },
-)
-,
-    );
-  }
-
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return 'Date not available';
     try {
@@ -409,5 +251,99 @@ void didChangeDependencies() {
     } catch (e) {
       return 'Invalid date';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: isLoading
+          ? Center(
+              child: Lottie.asset(
+                'assets/animations/loading_animation.json',
+                width: 200,
+                height: 200,
+              ),
+            )
+          : error.isNotEmpty
+              ? Center(child: Text(error, style: TextStyle(color: Colors.red)))
+              : jobs.isEmpty
+                  ? Center(child: Text('No jobs available'))
+                  : ListView.builder(
+                      itemCount: jobs.length,
+                      itemBuilder: (context, index) {
+                        final job = jobs[index];
+                        return Card(
+                          elevation: 4,
+                          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      job['imageUrl'],
+                                      height: 150,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.broken_image, size: 48),
+                                            Text('Failed to load image'),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                SizedBox(height: 12),
+                                Text(
+                                  job['jobTitle'] ?? 'No Title',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  _formatDate(job['postedAt']),
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  job['companyname'] ?? 'No Company',
+                                  style: TextStyle(fontSize: 16, color: Colors.blue),
+                                ),
+                                SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color.fromARGB(255, 245, 57, 43),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => JobDetailsScreen(
+                                            job: job,
+                                            userEmail: widget.userEmail,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text('View Details', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+    );
   }
 }
