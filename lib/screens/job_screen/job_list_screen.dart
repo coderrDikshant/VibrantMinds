@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class JobDetailsScreen extends StatelessWidget {
   final dynamic job;
   final String userEmail;
-  
+
 
   const JobDetailsScreen({required this.job,required this.userEmail});
 
@@ -20,52 +20,52 @@ class JobDetailsScreen extends StatelessWidget {
     }
   }
 
- Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
-  final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
+  Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
+    final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
 
-  final innerBody = jsonEncode({
-    "email": email,
-    "id": id,
-    "postedAt": postedAt,
-  });
+    final innerBody = jsonEncode({
+      "email": email,
+      "id": id,
+      "postedAt": postedAt,
+    });
 
-  final fullBody = jsonEncode({
-    "body": innerBody
-  });
+    final fullBody = jsonEncode({
+      "body": innerBody
+    });
 
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: fullBody,
-    );
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: fullBody,
+      );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
-      if (responseJson['statusCode'] == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Application submitted successfully!')),
-        );
+      if (response.statusCode == 200) {
+        final responseJson = jsonDecode(response.body);
+        if (responseJson['statusCode'] == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Application submitted successfully!')),
+          );
+        } else {
+          final body = jsonDecode(responseJson['body']);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
+          );
+        }
       } else {
-        final body = jsonDecode(responseJson['body']);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
+          SnackBar(content: Text('Failed to submit application: ${response.statusCode}')),
         );
       }
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit application: ${response.statusCode}')),
+        SnackBar(content: Text('Error submitting application: $e')),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error submitting application: $e')),
-    );
   }
-}
 
 
 
@@ -81,8 +81,8 @@ class JobDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-               SizedBox(height: 16),
-              if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+            SizedBox(height: 16),
+            if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
               Container(
                 height: 200,
                 width: double.infinity,
@@ -126,34 +126,43 @@ class JobDetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(job['eligibility'] ?? 'No eligibility criteria'),
-         
+
 
             SizedBox(height: 24),
             if (job['canApply'] == true)
               Center(
                 child: ElevatedButton(
-  onPressed: () {
-    final email = userEmail; 
-    final id = job['id'] ?? '';
-    final postedAt = job['postedAt']?.toString() ?? '';
+                  onPressed: () {
+                    final email = userEmail;
+                    final id = job['id'] ?? '';
+                    final postedAt = job['postedAt']?.toString() ?? '';
 
-    if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Missing required application data')),
-      );
-      return;
-    }
+                    if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Missing required application data')),
+                      );
+                      return;
+                    }
 
-    submitApplication(context, email, id, postedAt);
-  },
-  child: Text('Apply Now'),
-  style: ElevatedButton.styleFrom(
-    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-    textStyle: TextStyle(fontSize: 16),
-  ),
-),
-
-              ),
+                    submitApplication(context, email, id, postedAt);
+                  },
+                  child: Text('Apply Now'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: Text(
+                    'Only for VibrantMinds students',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              )
           ],
         ),
       ),
@@ -175,13 +184,13 @@ class _JobListScreenState extends State<JobListScreen> {
   bool isLoading = true;
   String error = '';
 
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  for (var job in jobs) {
-    job['hover'] = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    for (var job in jobs) {
+      job['hover'] = false;
+    }
   }
-}
 
   @override
   void initState() {
@@ -255,112 +264,112 @@ void didChangeDependencies() {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : error.isNotEmpty
-              ? Center(child: Text(error, style: TextStyle(color: const Color.fromARGB(255, 245, 57, 43))))
-              : jobs.isEmpty
-                  ? Center(child: Text('No jobs available'))
-                  : ListView.builder(
-  itemCount: jobs.length,
-  itemBuilder: (context, index) {
-    final job = jobs[index];
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 1, end: 1),
-      duration: Duration(milliseconds: 200),
-      builder: (context, scale, child) {
-        return MouseRegion(
-          onEnter: (_) => setState(() => jobs[index]['hover'] = true),
-          onExit: (_) => setState(() => jobs[index]['hover'] = false),
-          child: AnimatedScale(
-            scale: job['hover'] == true ? 1.02 : 1.0,
+          ? Center(child: Text(error, style: TextStyle(color: const Color.fromARGB(255, 245, 57, 43))))
+          : jobs.isEmpty
+          ? Center(child: Text('No jobs available'))
+          : ListView.builder(
+        itemCount: jobs.length,
+        itemBuilder: (context, index) {
+          final job = jobs[index];
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 1, end: 1),
             duration: Duration(milliseconds: 200),
-            child: Card(
-              elevation: job['hover'] == true ? 12 : 4,
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          job['imageUrl'],
-                          height: 150,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.broken_image, size: 48),
-                                Text('Failed to load image'),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    SizedBox(height: 12),
-                    Text(
-                      job['jobTitle'] ?? 'No Title',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    if (job['postedAt'] != null)
-                      Text(
-                        _formatDate(job['postedAt']),
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    SizedBox(height: 8),
-                    Text(
-                      job['companyname'] ?? 'No Company',
-                      style: TextStyle(fontSize: 16, color: Colors.blue),
-                    ),
-                    SizedBox(height: 12),
-                    Align(
-  alignment: Alignment.centerRight,
-  child: Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(8),
-      splashColor: Colors.orangeAccent.withOpacity(0.3), // Visible ripple
-      onTap: () async {
-        await Future.delayed(Duration(milliseconds: 100)); // Delay for ripple effect
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(job: job,userEmail: widget.userEmail),
-          ),
-        );
-      },
-      child: Ink(
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 245, 57, 43), // Orange button
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Text(
-          'View Details',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    ),
-  ),
-),
+            builder: (context, scale, child) {
+              return MouseRegion(
+                onEnter: (_) => setState(() => jobs[index]['hover'] = true),
+                onExit: (_) => setState(() => jobs[index]['hover'] = false),
+                child: AnimatedScale(
+                  scale: job['hover'] == true ? 1.02 : 1.0,
+                  duration: Duration(milliseconds: 200),
+                  child: Card(
+                    elevation: job['hover'] == true ? 12 : 4,
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                job['imageUrl'],
+                                height: 150,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.broken_image, size: 48),
+                                      Text('Failed to load image'),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          SizedBox(height: 12),
+                          Text(
+                            job['jobTitle'] ?? 'No Title',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          if (job['postedAt'] != null)
+                            Text(
+                              _formatDate(job['postedAt']),
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          SizedBox(height: 8),
+                          Text(
+                            job['companyname'] ?? 'No Company',
+                            style: TextStyle(fontSize: 16, color: Colors.blue),
+                          ),
+                          SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                splashColor: Colors.orangeAccent.withOpacity(0.3), // Visible ripple
+                                onTap: () async {
+                                  await Future.delayed(Duration(milliseconds: 100)); // Delay for ripple effect
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => JobDetailsScreen(job: job,userEmail: widget.userEmail),
+                                    ),
+                                  );
+                                },
+                                child: Ink(
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 245, 57, 43), // Orange button
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  child: Text(
+                                    'View Details',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
-                  ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  },
-)
-,
+              );
+            },
+          );
+        },
+      )
+      ,
     );
   }
 
