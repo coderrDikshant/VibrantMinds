@@ -28,6 +28,7 @@ dependencies:
   generative_ai_dart: ^0.1.2
   google_generative_language_api: ^0.2.1
   google_generative_ai:
+  font_awesome_flutter:
 #  riverpod: ^2.0.0
 #  flutter_3d_object: ^0.1.0
 

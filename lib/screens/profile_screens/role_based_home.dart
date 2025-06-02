@@ -86,12 +86,32 @@ String get _lastName => widget.lastName;
   }
 
   void _navigateTo(int index) {
-    _pageController.jumpToPage(index);
-    setState(() {
-      _currentIndex = index;
-    });
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Close the drawer
+
+    if (index <= 4) {
+      // Only switch via PageView for bottom nav pages
+      _pageController.jumpToPage(index);
+      setState(() {
+        _currentIndex = index;
+      });
+    } else if (index == 6) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ContactUsScreen(userEmail: _userEmail)),
+      );
+    } else if (index == 7) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ViewProfileScreen(
+            userEmail: _userEmail,
+            userName: _firstName,
+          ),
+        ),
+      );
+    }
   }
+
 
   void _logout(BuildContext context) async {
     try {
@@ -263,10 +283,10 @@ String get _lastName => widget.lastName;
                             icon: Icons.book, title: 'Blogs', pageIndex: 3),
                         _buildDrawerItem(context,
                             icon: Icons.work, title: 'Jobs', pageIndex: 4),
-                        _buildDrawerItem(context,
-                            icon: Icons.feedback,
-                            title: 'Feedback',
-                            pageIndex: 5),
+                        // _buildDrawerItem(context,
+                        //     icon: Icons.feedback,
+                        //     title: 'Feedback',
+                        //     pageIndex: 5),
                         _buildDrawerItem(context,
                             icon: Icons.contact_support,
                             title: 'Contact Us',
@@ -402,9 +422,7 @@ SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
 
 BlogScreen(userEmail: _userEmail, userName: _firstName),
 JobListScreen(userEmail: _userEmail),        // <-- index 4
-  FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
-  ContactUsScreen(userEmail: _userEmail),                           // <-- index 6
-  ViewProfileScreen(userEmail: _userEmail, userName: _firstName),
+  // FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
 
 
  // Added Profile screen
@@ -507,8 +525,8 @@ JobListScreen(userEmail: _userEmail),        // <-- index 4
         return 3;
       case 'Jobs':
         return 4;
-      case 'Feedback':
-        return 5;
+      // case 'Feedback':
+      //   return 5;
       case 'Contact Us':
         return 6;
       case 'View Profile':
