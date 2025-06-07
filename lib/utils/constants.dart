@@ -9,4 +9,5 @@ class AppConstants {
   static const String successStoriesCollection = 'success_stories';
   static const String quizResultsCollection = 'quizResults'; // Added for leaderboard
   static const List<String> difficulties = ['easy', 'medium', 'hard'];
+  static const String commentsCollection = 'comments';
 }

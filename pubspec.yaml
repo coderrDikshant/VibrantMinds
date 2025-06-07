@@ -23,11 +23,20 @@ dependencies:
   rive: ^0.13.20
   google_fonts: ^6.2.1
   get: ^4.7.2
-  intl: ^0.19.0
+  intl: ^0.20.2
   uuid: ^3.0.7
   generative_ai_dart: ^0.1.2
   google_generative_language_api: ^0.2.1
   google_generative_ai:
+  font_awesome_flutter:
+  pdf:
+  syncfusion_flutter_pdf:
+  file_picker:
+  flutter_quill: ^11.4.1
+  flutter_quill_extensions: ^11.0.0
+  video_player:
+  flutter_native_splash:
+#  docx_to_text:
 #  riverpod: ^2.0.0
 #  flutter_3d_object: ^0.1.0
 
@@ -54,3 +63,5 @@ flutter:
     - assets/animations/silver_medal.json
     - assets/animations/loading_trophy.json
     - assets/animations/empty_trophy.json
+    - assets/video/Logo_Animation.mp4
+    - assets/video/Logo_Animation_4.mp4

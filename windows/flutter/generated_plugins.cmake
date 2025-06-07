@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   amplify_db_common
   cloud_firestore
+  file_selector_windows
   firebase_core
   rive_common
   url_launcher_windows
