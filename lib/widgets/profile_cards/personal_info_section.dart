@@ -33,6 +33,15 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   String? _backendMessage;
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
+  final List<String> _indianStates = [
+    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam',
+    'Bihar', 'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir',
+    'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh',
+    'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha',
+    'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+    'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  ];
 
   @override
   void initState() {
@@ -227,6 +236,32 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       decoration: InputDecoration(labelText: label),
       validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
     );
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    _currentLocationController.dispose();
+    _hometownCityController.dispose();
+    super.dispose();
+  }
+
+  String? _validateTextField(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    if (value.trim().length < 2) {
+      return '$fieldName must be at least 2 characters';
+    }
+    if (RegExp(r'[0-9]').hasMatch(value)) {
+      return '$fieldName cannot contain numbers';
+    }
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) {
+      return '$fieldName cannot contain special characters';
+    }
+    return null;
   }
 
   @override

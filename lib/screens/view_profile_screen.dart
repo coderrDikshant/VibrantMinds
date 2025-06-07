@@ -31,7 +31,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   Future<void> _fetchProfileData() async {
     try {
       final response = await http.post(
-        Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
+        Uri.parse(
+            'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "httpMethod": "GET",
@@ -80,6 +81,152 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _errorMessage = 'Error loading profile: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  /// 🔍 PDF Resume Parser using Syncfusion
+  Future<void> _parseResume() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final bytes = await file.readAsBytes();
+
+        final PdfDocument document = PdfDocument(inputBytes: bytes);
+        final String text = PdfTextExtractor(document).extractText();
+        document.dispose();
+
+        // Debug: Log the extracted text
+        print('Extracted PDF Text: $text');
+
+        // Improved RegEx patterns
+        // Name: More flexible to handle various formats (e.g., "John Doe", "JOHN DOE", "Name: John A. Doe")
+        String? name = RegExp(
+            r'(?:Name[:\- ]+)?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)?)?)',
+            caseSensitive: false)
+            .firstMatch(text)
+            ?.group(1);
+
+        // Email: Unchanged, as it works
+        String? email =
+        RegExp(r'\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b').firstMatch(text)?.group(0);
+
+        // Phone: Slightly improved to handle more formats (e.g., "+91 123-456-7890", "(123) 456-7890")
+        String? phone = RegExp(
+            r'(\+?\d{1,3}[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})')
+            .firstMatch(text)
+            ?.group(1);
+
+        // Skills: More flexible to handle various headings and multi-line skills
+        String? skills = RegExp(
+            r'(?:Skills|Technical Skills|Key Skills|Proficiencies)[:\- ]*([^\n\r]*(?:\n[^\n\r]*){0,3})',
+            caseSensitive: false)
+            .firstMatch(text)
+            ?.group(1)
+            ?.trim();
+
+        // Fallback for name: If no name found, try to pick the first line that looks like a name
+        if (name == null || name
+            .trim()
+            .isEmpty) {
+          final lines = text.split('\n');
+          for (String line in lines) {
+            if (RegExp(
+                r'^[A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)?)?$')
+                .hasMatch(line.trim())) {
+              name = line.trim();
+              break;
+            }
+          }
+        }
+
+        // Fallback for skills: If no skills found, look for common skill keywords
+        if (skills == null || skills
+            .trim()
+            .isEmpty) {
+          final skillKeywords = [
+            'Python',
+            'Java',
+            'C++',
+            'JavaScript',
+            'SQL',
+            'HTML',
+            'CSS',
+            'React',
+            'Flutter',
+            'AWS',
+            'Docker',
+            'Git'
+          ];
+          final foundSkills = <String>[];
+          for (String keyword in skillKeywords) {
+            if (RegExp(r'\b$keyword\b', caseSensitive: false).hasMatch(text)) {
+              foundSkills.add(keyword);
+            }
+          }
+          if (foundSkills.isNotEmpty) {
+            skills = foundSkills.join(', ');
+          }
+        }
+
+        // Debug: Log matched values
+        print('Parsed Name: $name');
+        print('Parsed Email: $email');
+        print('Parsed Phone: $phone');
+        print('Parsed Skills: $skills');
+
+        showDialog(
+          context: context,
+          builder: (_) =>
+              AlertDialog(
+                title: const Text("Parsed Resume Info"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (name != null && name.isNotEmpty) Text("Name: $name"),
+                    if (email != null && email.isNotEmpty) Text(
+                        "Email: $email"),
+                    if (phone != null && phone.isNotEmpty) Text(
+                        "Phone: $phone"),
+                    if (skills != null && skills.isNotEmpty) Text(
+                        "Skills: $skills"),
+                    if ((name == null || name.isEmpty) &&
+                        (email == null || email.isEmpty) &&
+                        (phone == null || phone.isEmpty) &&
+                        (skills == null || skills.isEmpty))
+                      const Text("No relevant data parsed."),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Close"),
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      print('Error parsing resume: $e'); // Debug log
+      showDialog(
+        context: context,
+        builder: (_) =>
+            AlertDialog(
+              title: const Text("Error"),
+              content: Text("Failed to parse resume: $e"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Close"),
+                ),
+              ],
+            ),
+      );
     }
   }
 

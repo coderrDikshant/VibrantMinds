@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 
 import 'firebase_options.dart';
 import 'amplifyconfiguration.dart';
+import 'services/firestore_service.dart';
 import 'utils/jwt_utils.dart';
 import 'screens/profile_screens/role_based_home.dart';
 import 'widgets/profile_cards/personal_info_section.dart';
-import 'package:provider/provider.dart';
-import 'services/firestore_service.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'theme/vibrant_theme.dart';
+import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,10 +22,7 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('profileBox');
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await _configureAmplify();
 
   runApp(const AuthApp());
@@ -32,10 +30,17 @@ void main() async {
 
 Future<void> _configureAmplify() async {
   try {
-    await Amplify.addPlugin(AmplifyAuthCognito());
-    await Amplify.configure(amplifyconfig);
+    if (!Amplify.isConfigured) {
+      await Amplify.addPlugin(AmplifyAuthCognito());
+      await Amplify.configure(amplifyconfig);
+      safePrint('Amplify configured successfully');
+    } else {
+      safePrint('Amplify already configured');
+    }
+  } on AmplifyException catch (e) {
+    safePrint('Amplify configuration error: ${e.message}');
   } catch (e) {
-    safePrint('Amplify configuration failed: $e');
+    safePrint('Generic configuration error: $e');
   }
 }
 
@@ -49,7 +54,6 @@ class AuthApp extends StatelessWidget {
         Provider<FirestoreService>(
           create: (_) => FirestoreService(FirebaseFirestore.instance),
         ),
-        // Add other providers if needed
       ],
       child: Authenticator(
         child: const MyApp(),
@@ -64,21 +68,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      builder: Authenticator.builder(),
       debugShowCheckedModeBanner: false,
-      home: const LandingScreen(),
+      title: 'Vibrant Minds App',
+      theme: VibrantTheme.themeData,
+      builder: Authenticator.builder(),
+      home: const SplashScreen(),
     );
   }
 }
 
-class LandingScreen extends StatefulWidget {
-  const LandingScreen({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<LandingScreen> createState() => _LandingScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _LandingScreenState extends State<LandingScreen> {
+class _SplashScreenState extends State<SplashScreen> {
   String _email = '';
   bool _loading = true;
 
@@ -89,31 +95,28 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Future<void> _loadEmail() async {
-  try {
-    final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
-    final idToken = session.userPoolTokensResult.value.idToken;
-    final decoded = parseJwt(idToken.raw);
+    try {
+      final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+      final idToken = session.userPoolTokensResult.value.idToken;
+      final decoded = parseJwt(idToken.raw);
 
-    final email = decoded['email'] ?? '';
-    final groups = decoded['cognito:groups'] as List<dynamic>? ?? [];
-    final isEnrolled = groups.contains('Course_enroll');
+      final email = decoded['email'] ?? '';
+      final groups = decoded['cognito:groups'] as List<dynamic>? ?? [];
+      final isEnrolled = groups.contains('Course_enroll');
 
-    final profileBox = Hive.box('profileBox');
-    await profileBox.put('isCourseEnrolled', isEnrolled); // Save it locally
-   await Hive.openBox('jobCacheBox');
+      final profileBox = Hive.box('profileBox');
+      await profileBox.put('isCourseEnrolled', isEnrolled);
+      await Hive.openBox('jobCacheBox');
 
-  await Hive.openBox('jobCacheBox');
-    setState(() {
-      _email = email;
-      _loading = false;
-    });
-  } catch (e) {
-    safePrint('Error loading email: $e');
-    setState(() => _loading = false);
+      setState(() {
+        _email = email;
+        _loading = false;
+      });
+    } catch (e) {
+      safePrint('Error loading email: $e');
+      setState(() => _loading = false);
+    }
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -134,4 +137,5 @@ class _LandingScreenState extends State<LandingScreen> {
     }
 
     return PersonalInfoScreen(email: _email);
-  }}
+  }
+}

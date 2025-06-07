@@ -77,12 +77,32 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   }
 
   void _navigateTo(int index) {
-    _pageController.jumpToPage(index);
-    setState(() {
-      _currentIndex = index;
-    });
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Close the drawer
+
+    if (index <= 4) {
+      // Only switch via PageView for bottom nav pages
+      _pageController.jumpToPage(index);
+      setState(() {
+        _currentIndex = index;
+      });
+    } else if (index == 6) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ContactUsScreen(userEmail: _userEmail)),
+      );
+    } else if (index == 7) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ViewProfileScreen(
+            userEmail: _userEmail,
+            userName: _firstName,
+          ),
+        ),
+      );
+    }
   }
+
 
   void _logout(BuildContext context) async {
     try {
@@ -260,8 +280,10 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                             icon: Icons.book, title: 'Blogs', pageIndex: 3),
                         _buildDrawerItem(context,
                             icon: Icons.work, title: 'Jobs', pageIndex: 4),
-                        _buildDrawerItem(context,
-                            icon: Icons.feedback, title: 'Feedback', pageIndex: 5),
+                        // _buildDrawerItem(context,
+                        //     icon: Icons.feedback,
+                        //     title: 'Feedback',
+                        //     pageIndex: 5),
                         _buildDrawerItem(context,
                             icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
                         SwitchListTile(
@@ -382,6 +404,23 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
               });
             },
             children: [
+             HomeScreen(
+  navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
+  username: _firstName,  // only first name here
+  email: _userEmail,
+),
+
+
+QuizEntryScreen(name: _firstName, email: _userEmail),
+
+SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
+
+BlogScreen(userEmail: _userEmail, userName: _firstName),
+JobListScreen(userEmail: _userEmail),        // <-- index 4
+  // FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
+
+
+ // Added Profile screen
               HomeScreen(
                 navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
                 username: _firstName, // only first name here
@@ -493,9 +532,9 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         return 3;
       case 'job':
         return 4;
-      case 'feedback':
-        return 5;
-      case 'contact':
+      // case 'Feedback':
+      //   return 5;
+      case 'Contact Us':
         return 6;
       case 'profile':
         return 7;
