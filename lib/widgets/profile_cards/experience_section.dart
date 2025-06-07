@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 
 class ExperienceSection extends StatefulWidget {
   final Function(Map<String, dynamic>) onSaved;
+    final Map<String, dynamic>? initialData;
 
-  const ExperienceSection({super.key, required this.onSaved});
+   const ExperienceSection({
+    Key? key,
+    required this.onSaved,
+    this.initialData,
+  }) : super(key: key);
 
+  
   @override
   ExperienceSectionState createState() => ExperienceSectionState();
 }

@@ -34,8 +34,12 @@ class DecimalTextInputFormatter extends TextInputFormatter {
 
 class EducationSection extends StatefulWidget {
   final Function(Map<String, dynamic>) onSaved;
-
-  const EducationSection({super.key, required this.onSaved});
+  final Map<String, dynamic>? initialData;
+    const EducationSection({
+    Key? key,
+    required this.onSaved,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   EducationSectionState createState() => EducationSectionState();

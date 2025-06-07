@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
+import 'package:hive/hive.dart';
+
+import '../profile_screens/complete_profile_screen.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final dynamic job;
@@ -26,6 +29,34 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     }
   }
 
+  Future<bool> checkUserProfileComplete(String email) async {
+    final wrappedPayload = {
+      "httpMethod": "POST",
+      "body": {
+        "email": email,
+        "action": "complete_profile",
+      },
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(wrappedPayload),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final body = jsonDecode(decoded['body']) as Map<String, dynamic>;
+        return body['profileComplete'] == true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
     setState(() {
       _isApplying = true;
@@ -33,13 +64,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
     final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
 
-    final innerBody = jsonEncode({
+    final bodyPayload = {
       "email": email,
       "id": id,
       "postedAt": postedAt,
-    });
+    };
 
-    final fullBody = jsonEncode({"body": innerBody});
+    final fullBody = jsonEncode({
+      "httpMethod": "POST",
+      "body": jsonEncode(bodyPayload),
+    });
 
     try {
       final response = await http.post(
@@ -48,14 +82,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         body: fullBody,
       );
 
-      final responseJson = jsonDecode(response.body);
+      final responseJson = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && responseJson['statusCode'] == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Application submitted successfully!')),
         );
       } else {
-        final body = jsonDecode(responseJson['body']);
+        final body = jsonDecode(responseJson['body']) as Map<String, dynamic>;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${body['error'] ?? 'Unknown error'}')),
         );
@@ -93,17 +127,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 child: Image.network(
                   job['imageUrl'],
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.broken_image, size: 48),
-                          Text('Failed to load image'),
-                        ],
-                      ),
-                    );
-                  },
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.broken_image, size: 48),
+                        Text('Failed to load image'),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             SizedBox(height: 16),
@@ -130,7 +162,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: _isApplying
                       ? null
-                      : () {
+                      : () async {
                           final email = widget.userEmail;
                           final id = job['id'] ?? '';
                           final postedAt = job['postedAt']?.toString() ?? '';
@@ -142,7 +174,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             return;
                           }
 
-                          submitApplication(context, email, id, postedAt);
+                          bool completeProfile = await checkUserProfileComplete(email);
+
+                          if (completeProfile) {
+                            await submitApplication(context, email, id, postedAt);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CompleteProfileScreen(email: email),
+                              ),
+                            );
+                          }
                         },
                   child: _isApplying
                       ? SizedBox(
@@ -189,24 +232,47 @@ class _JobListScreenState extends State<JobListScreen> {
   @override
   void initState() {
     super.initState();
-    fetchJobs();
+    loadJobsFromHiveThenFetch();
   }
 
-  Future<void> fetchJobs() async {
-    if (widget.userEmail.isEmpty) {
-      setState(() {
-        error = 'No email provided';
-        isLoading = false;
-      });
-      return;
+  Future<void> loadJobsFromHiveThenFetch() async {
+    // Open box if not opened
+    if (!Hive.isBoxOpen('jobsBox')) {
+      await Hive.openBox('jobsBox');
     }
 
-    try {
-      final apiUrl = Uri.parse(
-        'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type',
-      );
+    final jobsBox = Hive.box('jobsBox');
 
-      final nestedBody = jsonEncode({"email": widget.userEmail});
+    // Load jobs from Hive immediately if available
+    final storedJobs = jobsBox.get('jobsList');
+    if (storedJobs != null && storedJobs is List) {
+      setState(() {
+        jobs = storedJobs.cast<dynamic>();
+        isLoading = false; // We have data to show now
+      });
+    }
+
+    // Now fetch fresh jobs from network in background
+    await fetchJobsAndSave();
+  }
+
+  Future<void> fetchJobsAndSave() async {
+    setState(() {
+      // Only show loading if no jobs loaded yet
+      if (jobs.isEmpty) isLoading = true;
+      error = '';
+    });
+
+    final bool isCourseEnrolled = Hive.box('profileBox').get('isCourseEnrolled', defaultValue: false);
+
+    try {
+      final apiUrl = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type');
+
+      final nestedBody = jsonEncode({
+        "email": widget.userEmail,
+        "courseEnroll": isCourseEnrolled,
+      });
+
       final postBody = jsonEncode({"body": nestedBody});
 
       final response = await http.post(
@@ -216,30 +282,42 @@ class _JobListScreenState extends State<JobListScreen> {
       );
 
       if (response.statusCode == 200) {
-        dynamic responseData = jsonDecode(response.body);
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 
-        if (responseData is String) {
-          responseData = jsonDecode(responseData);
-        } else if (responseData['body'] != null) {
-          responseData = jsonDecode(responseData['body']);
+        dynamic responseData;
+        if (decoded['body'] is String) {
+          responseData = jsonDecode(decoded['body']) as Map<String, dynamic>;
+        } else {
+          responseData = decoded['body'];
         }
 
         if (responseData['error'] != null) {
           throw Exception(responseData['error']);
         }
 
+        final freshJobs = responseData['jobs'] ?? [];
+
+        // Save fresh jobs to Hive
+        final jobsBox = Hive.box('jobsBox');
+        await jobsBox.put('jobsList', freshJobs);
+
+        // Update UI only if freshJobs is different or if no jobs loaded before
         setState(() {
-          jobs = responseData['jobs'] ?? [];
+          jobs = freshJobs;
           isLoading = false;
+          error = '';
         });
       } else {
         throw Exception('API request failed with status ${response.statusCode}');
       }
     } catch (e) {
-      setState(() {
-        error = 'Error: ${e.toString()}';
-        isLoading = false;
-      });
+      if (jobs.isEmpty) {
+        setState(() {
+          error = 'Error: ${e.toString()}';
+          isLoading = false;
+        });
+      }
+      // else ignore error if we have stale jobs loaded already
     }
   }
 
@@ -268,81 +346,82 @@ class _JobListScreenState extends State<JobListScreen> {
               ? Center(child: Text(error, style: TextStyle(color: Colors.red)))
               : jobs.isEmpty
                   ? Center(child: Text('No jobs available'))
-                  : ListView.builder(
-                      itemCount: jobs.length,
-                      itemBuilder: (context, index) {
-                        final job = jobs[index];
-                        return Card(
-                          elevation: 4,
-                          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      job['imageUrl'],
-                                      height: 150,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Column(
+                  : RefreshIndicator(
+                      onRefresh: fetchJobsAndSave,
+                      child: ListView.builder(
+                        itemCount: jobs.length,
+                        itemBuilder: (context, index) {
+                          final job = jobs[index];
+                          return Card(
+                            elevation: 4,
+                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        job['imageUrl'],
+                                        height: 150,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(Icons.broken_image, size: 48),
                                             Text('Failed to load image'),
                                           ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                SizedBox(height: 12),
-                                Text(
-                                  job['jobTitle'] ?? 'No Title',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  _formatDate(job['postedAt']),
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  job['companyname'] ?? 'No Company',
-                                  style: TextStyle(fontSize: 16, color: Colors.blue),
-                                ),
-                                SizedBox(height: 12),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color.fromARGB(255, 245, 57, 43),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                        ),
                                       ),
                                     ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => JobDetailsScreen(
-                                            job: job,
-                                            userEmail: widget.userEmail,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: Text('View Details', style: TextStyle(color: Colors.white)),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    job['jobTitle'] ?? 'No Title',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    _formatDate(job['postedAt']),
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    job['companyname'] ?? 'No Company',
+                                    style: TextStyle(fontSize: 16, color: Colors.blue),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(255, 245, 57, 43),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => JobDetailsScreen(
+                                              job: job,
+                                              userEmail: widget.userEmail,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text('View Details', style: TextStyle(color: Colors.white)),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
     );
   }

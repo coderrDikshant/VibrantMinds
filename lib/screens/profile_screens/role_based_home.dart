@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:user_end/screens/job_screen/job_list_screen.dart';
 import '../../widgets/success_story_cards/success_stories.dart';
@@ -12,6 +12,7 @@ import '../../screens/bookmark_screen.dart';
 import '../../screens/notificaion_screen.dart';
 import '../../screens/chatbot_screen.dart';
 import '../../screens/view_profile_screen.dart'; // Added import for profile screen
+import '../../main.dart';
 
 class RoleBasedHome extends StatefulWidget {
   final String firstName;
@@ -23,7 +24,6 @@ class RoleBasedHome extends StatefulWidget {
     required this.lastName,
   });
 
-
   @override
   State<RoleBasedHome> createState() => _RoleBasedHomeState();
 }
@@ -33,9 +33,8 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   final PageController _pageController = PageController();
 
   String _userEmail = '';
- String get _firstName => widget.firstName;
-String get _lastName => widget.lastName;
-
+  String get _firstName => widget.firstName;
+  String get _lastName => widget.lastName;
 
   bool _loading = true;
 
@@ -58,25 +57,17 @@ String get _lastName => widget.lastName;
     try {
       final result = await Amplify.Auth.fetchUserAttributes();
       final email = result.firstWhere(
-            (attr) => attr.userAttributeKey.key == 'email',
+        (attr) => attr.userAttributeKey.key == 'email',
         orElse: () => const AuthUserAttribute(
           userAttributeKey: CognitoUserAttributeKey.email,
           value: '',
         ),
       ).value;
 
-      final name = result.firstWhere(
-            (attr) => attr.userAttributeKey.key == 'name',
-        orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.name,
-          value: '',
-        ),
-      ).value;
-    setState(() {
-  _userEmail = email;
-  _loading = false;
-});
-
+      setState(() {
+        _userEmail = email;
+        _loading = false;
+      });
     } catch (e) {
       safePrint("Failed to fetch user attributes: $e");
       setState(() {
@@ -96,11 +87,17 @@ String get _lastName => widget.lastName;
   void _logout(BuildContext context) async {
     try {
       await Amplify.Auth.signOut();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged out')),
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthApp()),
+        (route) => false,
       );
     } catch (e) {
       safePrint("Sign out error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logout failed')),
+      );
     }
   }
 
@@ -132,8 +129,8 @@ String get _lastName => widget.lastName;
 
   Widget _buildDrawerItem(BuildContext context,
       {required IconData icon,
-        required String title,
-        required int pageIndex}) {
+      required String title,
+      required int pageIndex}) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFFD32F2F)),
       title: Text(
@@ -212,7 +209,9 @@ String get _lastName => widget.lastName;
                     const SizedBox(height: 10),
                     Flexible(
                       child: Text(
-                        'VibrantMinds Technologies',
+                        (_firstName.isNotEmpty && _lastName.isNotEmpty)
+                            ? '$_firstName $_lastName'
+                            : 'Guest User',
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -250,27 +249,21 @@ String get _lastName => widget.lastName;
                     child: Column(
                       children: [
                         _buildDrawerItem(context,
-                            icon: Icons.person, title: 'View Profile', pageIndex: 7), // Added Profile item
+                            icon: Icons.person, title: 'View Profile', pageIndex: 7),
                         _buildDrawerItem(context,
                             icon: Icons.home, title: 'Home', pageIndex: 0),
                         _buildDrawerItem(context,
                             icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
                         _buildDrawerItem(context,
-                            icon: Icons.star,
-                            title: 'Success Stories',
-                            pageIndex: 2),
+                            icon: Icons.star, title: 'Success Stories', pageIndex: 2),
                         _buildDrawerItem(context,
                             icon: Icons.book, title: 'Blogs', pageIndex: 3),
                         _buildDrawerItem(context,
                             icon: Icons.work, title: 'Jobs', pageIndex: 4),
                         _buildDrawerItem(context,
-                            icon: Icons.feedback,
-                            title: 'Feedback',
-                            pageIndex: 5),
+                            icon: Icons.feedback, title: 'Feedback', pageIndex: 5),
                         _buildDrawerItem(context,
-                            icon: Icons.contact_support,
-                            title: 'Contact Us',
-                            pageIndex: 6),
+                            icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
                         SwitchListTile(
                           title: const Text('Show ChatBot'),
                           value: _showChatBot,
@@ -350,8 +343,7 @@ String get _lastName => widget.lastName;
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_none,
-                    color: Color(0xFFD32F2F)),
+                icon: const Icon(Icons.notifications_none, color: Color(0xFFD32F2F)),
                 onPressed: () => _showNotifications(context),
                 tooltip: 'Notifications',
               ),
@@ -367,9 +359,10 @@ String get _lastName => widget.lastName;
                   child: const Text(
                     '3',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -389,25 +382,18 @@ String get _lastName => widget.lastName;
               });
             },
             children: [
-             HomeScreen(
-  navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
-  username: _firstName,  // only first name here
-  email: _userEmail,
-),
-
-
-QuizEntryScreen(name: _firstName, email: _userEmail),
-
-SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
-
-BlogScreen(userEmail: _userEmail, userName: _firstName),
-JobListScreen(userEmail: _userEmail),        // <-- index 4
-  FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
-  ContactUsScreen(userEmail: _userEmail),                           // <-- index 6
-  ViewProfileScreen(userEmail: _userEmail, userName: _firstName),
-
-
- // Added Profile screen
+              HomeScreen(
+                navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
+                username: _firstName, // only first name here
+                email: _userEmail,
+              ),
+              QuizEntryScreen(name: _firstName, email: _userEmail),
+              SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
+              BlogScreen(userEmail: _userEmail, userName: _firstName),
+              JobListScreen(userEmail: _userEmail),
+              FeedbackScreen(userEmail: _userEmail),
+              ContactUsScreen(userEmail: _userEmail),
+              ViewProfileScreen(userEmail: _userEmail, userName: _firstName),
             ],
           ),
           if (_showChatBot)
@@ -485,9 +471,9 @@ JobListScreen(userEmail: _userEmail),        // <-- index 4
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFD32F2F) : Colors.grey,
               fontSize: 12,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? const Color(0xFFD32F2F) : Colors.grey,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -495,26 +481,26 @@ JobListScreen(userEmail: _userEmail),        // <-- index 4
     );
   }
 
-  int _getPageIndex(String route) {
-    switch (route) {
-      case 'Home':
+  int _getPageIndex(String routeName) {
+    switch (routeName) {
+      case 'home':
         return 0;
-      case 'Quizzes':
+      case 'quiz':
         return 1;
-      case 'Success Stories':
+      case 'success':
         return 2;
-      case 'Blogs':
+      case 'blog':
         return 3;
-      case 'Jobs':
+      case 'job':
         return 4;
-      case 'Feedback':
+      case 'feedback':
         return 5;
-      case 'Contact Us':
+      case 'contact':
         return 6;
-      case 'View Profile':
-        return 7; // Added Profile route
+      case 'profile':
+        return 7;
       default:
-        return _currentIndex;
+        return 0;
     }
   }
 }

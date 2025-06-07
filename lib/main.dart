@@ -1,39 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 
-
 import 'firebase_options.dart';
 import 'amplifyconfiguration.dart';
+import 'utils/jwt_utils.dart';
+import 'screens/profile_screens/role_based_home.dart';
+import 'widgets/profile_cards/personal_info_section.dart';
+import 'package:provider/provider.dart';
 import 'services/firestore_service.dart';
-import 'widgets/profile_cards/profile_redirector.dart'; 
-import 'theme/vibrant_theme.dart'; 
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Hive.initFlutter();
+  await Hive.openBox('profileBox');
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  final api_key = 'AIzaSyANcLW4GibTK4q29-9TP77chbhEPpik34k';
- 
+
   await _configureAmplify();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider<FirestoreService>(
-          create: (_) => FirestoreService(FirebaseFirestore.instance),
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const AuthApp());
 }
 
 Future<void> _configureAmplify() async {
@@ -41,7 +35,26 @@ Future<void> _configureAmplify() async {
     await Amplify.addPlugin(AmplifyAuthCognito());
     await Amplify.configure(amplifyconfig);
   } catch (e) {
-    safePrint('Amplify error: $e');
+    safePrint('Amplify configuration failed: $e');
+  }
+}
+
+class AuthApp extends StatelessWidget {
+  const AuthApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<FirestoreService>(
+          create: (_) => FirestoreService(FirebaseFirestore.instance),
+        ),
+        // Add other providers if needed
+      ],
+      child: Authenticator(
+        child: const MyApp(),
+      ),
+    );
   }
 }
 
@@ -50,104 +63,74 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Authenticator(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Vibrant Minds App',
-        theme: VibrantTheme.themeData, 
-        builder: Authenticator.builder(), 
-        home: const CombinedRedirector(),
-      ),
+    return MaterialApp(
+      builder: Authenticator.builder(),
+      debugShowCheckedModeBanner: false,
+      home: const LandingScreen(),
     );
   }
 }
 
-class CombinedRedirector extends StatelessWidget {
-  const CombinedRedirector({super.key});
+class LandingScreen extends StatefulWidget {
+  const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  String _email = '';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEmail();
+  }
+
+  Future<void> _loadEmail() async {
+  try {
+    final session = await Amplify.Auth.fetchAuthSession() as CognitoAuthSession;
+    final idToken = session.userPoolTokensResult.value.idToken;
+    final decoded = parseJwt(idToken.raw);
+
+    final email = decoded['email'] ?? '';
+    final groups = decoded['cognito:groups'] as List<dynamic>? ?? [];
+    final isEnrolled = groups.contains('Course_enroll');
+
+    final profileBox = Hive.box('profileBox');
+    await profileBox.put('isCourseEnrolled', isEnrolled); // Save it locally
+  
+  await Hive.openBox('jobCacheBox');
+    setState(() {
+      _email = email;
+      _loading = false;
+    });
+  } catch (e) {
+    safePrint('Error loading email: $e');
+    setState(() => _loading = false);
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
-    return const ProfileRedirector(); 
-  }
-}
-// import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
-// import '../../widgets/profile_cards/experience_section.dart'; // Import your EducationSection file
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
+    final profileBox = Hive.box('profileBox');
+    final personalInfo = profileBox.get('personalInfo');
 
-//   // Initialize Firebase
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
+    if (personalInfo is Map && personalInfo['firstName'] != null) {
+      return RoleBasedHome(
+        firstName: personalInfo['firstName'] ?? '',
+        lastName: personalInfo['lastName'] ?? '',
+      );
+    }
 
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'Education Section Debug',
-//       theme: ThemeData(
-//         primaryColor: Colors.orange[700],
-//         colorScheme: ColorScheme.fromSwatch(
-//           primarySwatch: Colors.orange,
-//           accentColor: Colors.orangeAccent,
-//           backgroundColor: Colors.grey[100],
-//         ),
-//         inputDecorationTheme: InputDecorationTheme(
-//           border: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.orange[300]!),
-//           ),
-//           enabledBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.orange[300]!),
-//           ),
-//           focusedBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.orange[700]!, width: 2),
-//           ),
-//           errorBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.red[700]!),
-//           ),
-//           focusedErrorBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.red[700]!, width: 2),
-//           ),
-//           labelStyle: TextStyle(color: Colors.orange[900]),
-//           filled: true,
-//           fillColor: Colors.white,
-//         ),
-//         elevatedButtonTheme: ElevatedButtonThemeData(
-//           style: ElevatedButton.styleFrom(
-//             backgroundColor: Colors.orange[700],
-//             foregroundColor: Colors.white,
-//             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//             padding: const EdgeInsets.symmetric(vertical: 16),
-//             textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-//           ),
-//         ),
-//       ),
-//       home: Scaffold(
-//         appBar: AppBar(
-//           title: const Text('Debug Education Section'),
-//           backgroundColor: Colors.orange[700],
-//         ),
-//         body: ExperienceSection(
-//           onSaved: (data) {
-//             // Mock callback to print form data for debugging
-//             print('Saved Education Data: $data');
-//           },
-//         ),
-//       ),
-//     );
-//   }
-// }
+    return PersonalInfoScreen(email: _email);
+  }}
