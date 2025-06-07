@@ -164,60 +164,60 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               const SizedBox(height: 32),
 
               /// --- Contact Form ---
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Send Us a Message',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                        color: Color(0xFF000000),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: _inputDecoration('Your Name'),
-                      validator: (value) => value!.isEmpty ? 'Enter your name' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _messageController,
-                      maxLines: 5,
-                      decoration: _inputDecoration('Your Message'),
-                      validator: (value) => value!.isEmpty ? 'Enter your message' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submitContact,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD32F2F),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        child: _isSubmitting
-                            ? Lottie.asset('assets/animations/loading_animation.json', width: 24, height: 24)
-                            : const Text(
-                          'Send',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Form(
+              //   key: _formKey,
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       const Text(
+              //         'Send Us a Message',
+              //         style: TextStyle(
+              //           fontSize: 20,
+              //           fontWeight: FontWeight.bold,
+              //           fontFamily: 'Poppins',
+              //           color: Color(0xFF000000),
+              //         ),
+              //       ),
+              //       const SizedBox(height: 16),
+              //       TextFormField(
+              //         controller: _nameController,
+              //         decoration: _inputDecoration('Your Name'),
+              //         validator: (value) => value!.isEmpty ? 'Enter your name' : null,
+              //       ),
+              //       const SizedBox(height: 16),
+              //       TextFormField(
+              //         controller: _messageController,
+              //         maxLines: 5,
+              //         decoration: _inputDecoration('Your Message'),
+              //         validator: (value) => value!.isEmpty ? 'Enter your message' : null,
+              //       ),
+              //       const SizedBox(height: 16),
+              //       Align(
+              //         alignment: Alignment.centerRight,
+              //         child: ElevatedButton(
+              //           onPressed: _isSubmitting ? null : _submitContact,
+              //           style: ElevatedButton.styleFrom(
+              //             backgroundColor: const Color(0xFFD32F2F),
+              //             shape: RoundedRectangleBorder(
+              //               borderRadius: BorderRadius.circular(12),
+              //             ),
+              //             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              //           ),
+              //           child: _isSubmitting
+              //               ? Lottie.asset('assets/animations/loading_animation.json', width: 24, height: 24)
+              //               : const Text(
+              //             'Send',
+              //             style: TextStyle(
+              //               color: Colors.white,
+              //               fontFamily: 'Roboto',
+              //               fontWeight: FontWeight.w600,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),
