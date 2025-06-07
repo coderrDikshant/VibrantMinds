@@ -100,7 +100,8 @@ class _LandingScreenState extends State<LandingScreen> {
 
     final profileBox = Hive.box('profileBox');
     await profileBox.put('isCourseEnrolled', isEnrolled); // Save it locally
-  
+   await Hive.openBox('jobCacheBox');
+
   await Hive.openBox('jobCacheBox');
     setState(() {
       _email = email;

@@ -24,15 +24,30 @@ class _AppliedJobsScreenState extends State<AppliedJobsScreen> {
     fetchAndUpdateJobs();
   }
 
-  void loadJobsFromHive() {
-    final box = Hive.box('jobCacheBox');
-    final cachedJobs = box.get('appliedJobs', defaultValue: []);
-    if (cachedJobs is List) {
+void loadJobsFromHive() {
+  final box = Hive.box('jobCacheBox');
+  final cachedJobs = box.get('appliedJobs', defaultValue: []);
+
+  if (cachedJobs is List) {
+    try {
+      final List<Map<String, dynamic>> convertedJobs = cachedJobs
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(
+                item.map((key, value) => MapEntry(key.toString(), value)),
+              ))
+          .toList();
+
       setState(() {
-        jobs = List<Map<String, dynamic>>.from(cachedJobs);
+        jobs = convertedJobs;
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load cached jobs: $e';
       });
     }
   }
+}
+
 
   Future<void> fetchAndUpdateJobs() async {
     try {
