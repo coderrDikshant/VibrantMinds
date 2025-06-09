@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart'; // Import Hive
 
-import '../../screens/profile_screens/role_based_home.dart';  // Adjust the import path as needed
+import '../../screens/profile_screens/role_based_home.dart'; // Adjust the import path as needed
 
 class PersonalInfoScreen extends StatefulWidget {
   final String email;
-  
 
   const PersonalInfoScreen({Key? key, required this.email}) : super(key: key);
 
@@ -22,25 +22,58 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _currentLocationController = TextEditingController();
+  final TextEditingController _currentLocationController =
+      TextEditingController();
   final TextEditingController _hometownCityController = TextEditingController();
-  final TextEditingController _currentStateController = TextEditingController();
-  final TextEditingController _hometownStateController = TextEditingController();
+  // Removed currentStateController and hometownStateController as they will be dropdowns
+  // String? _currentStateController; // Will hold selected current state
+  // String? _hometownStateController; // Will hold selected hometown state
 
   String? _gender;
   DateTime? _dob;
+  String? _currentState; // Use a String to hold the selected state
+  String? _hometownState; // Use a String to hold the selected state
 
   String? _backendMessage;
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _indianStates = [
-    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam',
-    'Bihar', 'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu',
-    'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir',
-    'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh',
-    'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha',
-    'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
-    'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+    'Andaman and Nicobar Islands',
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chandigarh',
+    'Chhattisgarh',
+    'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jammu and Kashmir',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Ladakh',
+    'Lakshadweep',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Puducherry',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal',
   ];
 
   @override
@@ -65,66 +98,69 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     _phoneController.dispose();
     _currentLocationController.dispose();
     _hometownCityController.dispose();
-    _currentStateController.dispose();
-    _hometownStateController.dispose();
+    // No need to dispose controllers for dropdowns
     super.dispose();
   }
 
- Future<void> _checkIfCompleted() async {
-  final requestPayload = {
-    "httpMethod": "GET",
-    "queryStringParameters": {
-      "email": widget.email,
-    },
-  };
+  Future<void> _checkIfCompleted() async {
+    final requestPayload = {
+      "httpMethod": "GET",
+      "queryStringParameters": {"email": widget.email},
+    };
 
-  try {
-    final response = await http.post(
-      Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(requestPayload),
-    );
-
-    print('GET Response status: ${response.statusCode}');
-    print('GET Response body: ${response.body}');
-
-  if (response.statusCode == 200) {
-  final responseBody = jsonDecode(response.body);
-  final innerBody = jsonDecode(responseBody['body']);
-
-  final profile = innerBody['profile'] ?? {};
-  final personalInfo = profile['personalInfo'] ?? {};
-
-  final isCompleted = innerBody['completedPersonalInfo'] == true;
-  final firstName = personalInfo['firstName'] ?? '';
-  final lastName = personalInfo['lastName'] ?? '';
-
-  print('Extracted firstName: $firstName, lastName: $lastName');
-
-  if (isCompleted) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RoleBasedHome(
-          firstName: firstName,
-          lastName: lastName,
+    try {
+      final response = await http.post(
+        Uri.parse(
+          'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist',
         ),
-      ),
-    );
-    return;
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestPayload),
+      );
+
+      debugPrint('GET Response status: ${response.statusCode}');
+      debugPrint('GET Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        final innerBody = jsonDecode(responseBody['body']);
+
+        final profile = innerBody['profile'] ?? {};
+        final personalInfo = profile['personalInfo'] ?? {};
+
+        final isCompleted = innerBody['completedPersonalInfo'] == true;
+        final firstName = personalInfo['firstName'] ?? '';
+        final lastName = personalInfo['lastName'] ?? '';
+
+        debugPrint('Extracted firstName: $firstName, lastName: $lastName');
+
+        if (isCompleted) {
+          // Store personal info in Hive before navigating
+          final profileBox = Hive.box('profileBox');
+          await profileBox.put(
+            'personalInfo',
+            personalInfo,
+          ); // Store the entire personalInfo map
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) =>
+                      RoleBasedHome(firstName: firstName, lastName: lastName),
+            ),
+          );
+          return; // Stop execution after navigation
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking personal info completion: $e');
+      // If there's an error, assume not completed and proceed to form
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-}
-
-  } catch (e) {
-    debugPrint('Error checking personal info completion: $e');
-  }
-
-  setState(() {
-    _isLoading = false;
-  });
-}
-
-
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -141,13 +177,21 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
   Future<void> _submitPersonalInfo() async {
-    if (!_formKey.currentState!.validate() || _gender == null || _dob == null) {
+    if (!_formKey.currentState!.validate() ||
+        _gender == null ||
+        _dob == null ||
+        _currentState == null ||
+        _hometownState == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please complete all fields, including DOB and gender.")),
+        const SnackBar(content: Text("Please complete all required fields.")),
       );
       return;
     }
-     print('Submitting firstName: ${_firstNameController.text.trim()}, lastName: ${_lastNameController.text.trim()}');
+
+    debugPrint(
+      'Submitting firstName: ${_firstNameController.text.trim()}, lastName: ${_lastNameController.text.trim()}',
+    );
+
     setState(() {
       _isSubmitting = true;
       _backendMessage = null;
@@ -159,11 +203,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       "gender": _gender,
       "dob": _dob!.toIso8601String(),
       "phone": _phoneController.text.trim(),
-      "email": widget.email,
+      "email": widget.email, // Email should come from widget.email
       "currentLocation": _currentLocationController.text.trim(),
       "hometownCity": _hometownCityController.text.trim(),
-      "currentState": _currentStateController.text.trim(),
-      "hometownState": _hometownStateController.text.trim(),
+      "currentState": _currentState, // Use selected value
+      "hometownState": _hometownState, // Use selected value
     };
 
     final requestPayload = {
@@ -177,7 +221,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
+        Uri.parse(
+          'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestPayload),
       );
@@ -193,29 +239,36 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         _backendMessage = const JsonEncoder.withIndent('  ').convert(innerBody);
       });
 
-      if (innerBody['completedPersonalInfo'] == true) {
+      if (innerBody['statusCode'] == 200 &&
+          innerBody['completedPersonalInfo'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Personal info submitted successfully.')),
+          const SnackBar(
+            content: Text('Personal info submitted successfully.'),
+          ),
         );
 
-      
+        // Store personal info in Hive upon successful submission
+        final profileBox = Hive.box('profileBox');
+        await profileBox.put('personalInfo', personalInfoData);
 
         // Navigate directly to RoleBased page widget
-      Navigator.pushReplacement(
-  context,
-  
-  MaterialPageRoute(
-    
-    builder: (_) => RoleBasedHome(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-    ),
-  ),
-);
-
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => RoleBasedHome(
+                  firstName: _firstNameController.text.trim(),
+                  lastName: _lastNameController.text.trim(),
+                ),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please complete all personal information fields.')),
+          SnackBar(
+            content: Text(
+              'Error: ${innerBody['message'] ?? 'Please complete all personal information fields.'}',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -223,32 +276,13 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         _isSubmitting = false;
         _backendMessage = 'Error submitting personal info: $e';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_backendMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_backendMessage!)));
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {TextInputType? keyboardType}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(labelText: label),
-      validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
-    );
-  }
-
-  @override
-  void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _phoneController.dispose();
-    _currentLocationController.dispose();
-    _hometownCityController.dispose();
-    super.dispose();
-  }
-
-  String? _validateTextField(String? value, String fieldName) {
+  String? _validateNameField(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName is required';
     }
@@ -264,12 +298,28 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
+      return 'Please enter a valid 10-digit phone number';
+    }
+    return null;
+  }
+
+  // Helper method for generic text fields that just need to be non-empty
+  String? _validateRequiredText(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -280,16 +330,25 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           key: _formKey,
           child: Column(
             children: [
-              _buildTextField(_firstNameController, 'First Name'),
-              _buildTextField(_lastNameController, 'Last Name'),
+              TextFormField(
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'First Name'),
+                validator: (val) => _validateNameField(val, 'First Name'),
+              ),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                validator: (val) => _validateNameField(val, 'Last Name'),
+              ),
               DropdownButtonFormField<String>(
                 value: _gender,
-                items: _genders
-                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                    .toList(),
+                items:
+                    _genders
+                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                        .toList(),
                 onChanged: (val) => setState(() => _gender = val),
                 decoration: const InputDecoration(labelText: 'Gender'),
-                validator: (val) => val == null ? 'Select gender' : null,
+                validator: (val) => val == null ? 'Gender is required' : null,
               ),
               ListTile(
                 title: Text(
@@ -300,7 +359,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _pickDate,
               ),
-              if (_dob == null)
+              // Manual validation message for DOB if not selected
+              if (_dob == null &&
+                  _formKey.currentState?.validate() ==
+                      false) // Only show if form is trying to validate
                 const Padding(
                   padding: EdgeInsets.only(left: 16, bottom: 8),
                   child: Align(
@@ -311,17 +373,66 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     ),
                   ),
                 ),
-              _buildTextField(_phoneController, 'Phone Number', keyboardType: TextInputType.phone),
-              _buildTextField(_currentLocationController, 'Current Location'),
-              _buildTextField(_hometownCityController, 'Hometown City'),
-              _buildTextField(_currentStateController, 'Current State'),
-              _buildTextField(_hometownStateController, 'Hometown State'),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Phone Number'),
+                validator: _validatePhone,
+              ),
+              TextFormField(
+                controller: _currentLocationController,
+                decoration: const InputDecoration(
+                  labelText: 'Current Location',
+                ),
+                validator:
+                    (val) => _validateRequiredText(val, 'Current Location'),
+              ),
+              TextFormField(
+                controller: _hometownCityController,
+                decoration: const InputDecoration(labelText: 'Hometown City'),
+                validator: (val) => _validateRequiredText(val, 'Hometown City'),
+              ),
+              // Dropdown for Current State
+              DropdownButtonFormField<String>(
+                value: _currentState,
+                items:
+                    _indianStates
+                        .map(
+                          (state) => DropdownMenuItem(
+                            value: state,
+                            child: Text(state),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) => setState(() => _currentState = val),
+                decoration: const InputDecoration(labelText: 'Current State'),
+                validator:
+                    (val) => val == null ? 'Current State is required' : null,
+              ),
+              // Dropdown for Hometown State
+              DropdownButtonFormField<String>(
+                value: _hometownState,
+                items:
+                    _indianStates
+                        .map(
+                          (state) => DropdownMenuItem(
+                            value: state,
+                            child: Text(state),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) => setState(() => _hometownState = val),
+                decoration: const InputDecoration(labelText: 'Hometown State'),
+                validator:
+                    (val) => val == null ? 'Hometown State is required' : null,
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitPersonalInfo,
-                child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Submit'),
+                child:
+                    _isSubmitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Submit'),
               ),
               if (_backendMessage != null)
                 Container(
@@ -332,7 +443,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   child: SingleChildScrollView(
                     child: Text(
                       'Backend response:\n$_backendMessage',
-                      style: const TextStyle(color: Colors.black87, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),

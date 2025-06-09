@@ -5,6 +5,8 @@ import 'package:lottie/lottie.dart';
 import 'package:hive/hive.dart';
 
 import '../profile_screens/complete_profile_screen.dart';
+import 'shortlisted_job_details_screen.dart';
+import 'shortlisted_jobs_list_screen.dart'; // Import the new screen
 
 class JobDetailsScreen extends StatefulWidget {
   final dynamic job;
@@ -22,7 +24,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return 'Date not available';
     try {
-      final date = DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp.toString()));
+      final date = DateTime.fromMillisecondsSinceEpoch(
+        int.parse(timestamp.toString()),
+      );
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return 'Invalid date';
@@ -32,15 +36,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Future<bool> checkUserProfileComplete(String email) async {
     final wrappedPayload = {
       "httpMethod": "POST",
-      "body": {
-        "email": email,
-        "action": "complete_profile",
-      },
+      "body": {"email": email, "action": "complete_profile"},
     };
 
     try {
       final response = await http.post(
-        Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist'),
+        Uri.parse(
+          'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/User_exist/User_profile_exist',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(wrappedPayload),
       );
@@ -57,18 +60,21 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     }
   }
 
-  Future<void> submitApplication(BuildContext context, String email, String id, String postedAt) async {
+  Future<void> submitApplication(
+    BuildContext context,
+    String email,
+    String id,
+    String postedAt,
+  ) async {
     setState(() {
       _isApplying = true;
     });
 
-    final url = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action');
+    final url = Uri.parse(
+      'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/Apply/apply_action',
+    );
 
-    final bodyPayload = {
-      "email": email,
-      "id": id,
-      "postedAt": postedAt,
-    };
+    final bodyPayload = {"email": email, "id": id, "postedAt": postedAt};
 
     final fullBody = jsonEncode({
       "httpMethod": "POST",
@@ -119,23 +125,40 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
+            if (job['imageUrl'] != null &&
+                job['imageUrl'].toString().isNotEmpty)
               Container(
                 height: 200,
                 width: double.infinity,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Image.network(
                   job['imageUrl'],
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.broken_image, size: 48),
-                        Text('Failed to load image'),
-                      ],
-                    ),
-                  ),
+                  errorBuilder:
+                      (context, error, stackTrace) => Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Failed to load image',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
                 ),
               ),
             SizedBox(height: 16),
@@ -149,51 +172,76 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               style: TextStyle(color: Colors.grey),
             ),
             SizedBox(height: 16),
-            Text("Description:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              "Description:",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 8),
             Text(job['description'] ?? 'No description available'),
             SizedBox(height: 16),
-            Text("Eligibility Criteria:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              "Eligibility Criteria:",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 8),
             Text(job['eligibility'] ?? 'No eligibility criteria'),
             SizedBox(height: 24),
             if (job['canApply'] == true)
               Center(
                 child: ElevatedButton(
-                  onPressed: _isApplying
-                      ? null
-                      : () async {
-                          final email = widget.userEmail;
-                          final id = job['id'] ?? '';
-                          final postedAt = job['postedAt']?.toString() ?? '';
+                  onPressed:
+                      _isApplying
+                          ? null
+                          : () async {
+                            final email = widget.userEmail;
+                            final id = job['id'] ?? '';
+                            final postedAt = job['postedAt']?.toString() ?? '';
 
-                          if (email.isEmpty || id.isEmpty || postedAt.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Missing required application data')),
-                            );
-                            return;
-                          }
+                            if (email.isEmpty ||
+                                id.isEmpty ||
+                                postedAt.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Missing required application data',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
 
-                          bool completeProfile = await checkUserProfileComplete(email);
+                            bool completeProfile =
+                                await checkUserProfileComplete(email);
 
-                          if (completeProfile) {
-                            await submitApplication(context, email, id, postedAt);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CompleteProfileScreen(email: email),
-                              ),
-                            );
-                          }
-                        },
-                  child: _isApplying
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                        )
-                      : Text('Apply Now'),
+                            if (completeProfile) {
+                              await submitApplication(
+                                context,
+                                email,
+                                id,
+                                postedAt,
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          CompleteProfileScreen(email: email),
+                                ),
+                              );
+                            }
+                          },
+                  child:
+                      _isApplying
+                          ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                          : Text('Apply Now'),
                 ),
               )
             else
@@ -202,10 +250,38 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
                     'Only for VibrantMinds students',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
+            SizedBox(height: 16), // Add some space
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      Colors.teal, // A different color for distinction
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShortlistedJobDetailsScreen(job: job),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View Shortlisted',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -263,10 +339,14 @@ class _JobListScreenState extends State<JobListScreen> {
       error = '';
     });
 
-    final bool isCourseEnrolled = Hive.box('profileBox').get('isCourseEnrolled', defaultValue: false);
+    final bool isCourseEnrolled = Hive.box(
+      'profileBox',
+    ).get('isCourseEnrolled', defaultValue: false);
 
     try {
-      final apiUrl = Uri.parse('https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type');
+      final apiUrl = Uri.parse(
+        'https://0tkvr567rk.execute-api.us-east-1.amazonaws.com/job_type/job_type',
+      );
 
       final nestedBody = jsonEncode({
         "email": widget.userEmail,
@@ -308,7 +388,9 @@ class _JobListScreenState extends State<JobListScreen> {
           error = '';
         });
       } else {
-        throw Exception('API request failed with status ${response.statusCode}');
+        throw Exception(
+          'API request failed with status ${response.statusCode}',
+        );
       }
     } catch (e) {
       if (jobs.isEmpty) {
@@ -324,7 +406,9 @@ class _JobListScreenState extends State<JobListScreen> {
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return 'Date not available';
     try {
-      final date = DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp.toString()));
+      final date = DateTime.fromMillisecondsSinceEpoch(
+        int.parse(timestamp.toString()),
+      );
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return 'Invalid date';
@@ -334,95 +418,194 @@ class _JobListScreenState extends State<JobListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isLoading
-          ? Center(
-              child: Lottie.asset(
-                'assets/animations/loading_animation.json',
-                width: 200,
-                height: 200,
-              ),
-            )
-          : error.isNotEmpty
+      appBar: AppBar(
+        title: Text('Job Listings'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.star), // Icon for shortlisted jobs
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ShortlistedJobsListScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body:
+          isLoading
+              ? Center(
+                child: Lottie.asset(
+                  'assets/animations/loading_animation.json',
+                  width: 200,
+                  height: 200,
+                ),
+              )
+              : error.isNotEmpty
               ? Center(child: Text(error, style: TextStyle(color: Colors.red)))
               : jobs.isEmpty
-                  ? Center(child: Text('No jobs available'))
-                  : RefreshIndicator(
-                      onRefresh: fetchJobsAndSave,
-                      child: ListView.builder(
-                        itemCount: jobs.length,
-                        itemBuilder: (context, index) {
-                          final job = jobs[index];
-                          return Card(
-                            elevation: 4,
-                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (job['imageUrl'] != null && job['imageUrl'].toString().isNotEmpty)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        job['imageUrl'],
-                                        height: 150,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.broken_image, size: 48),
-                                            Text('Failed to load image'),
-                                          ],
-                                        ),
+              ? Center(child: Text('No jobs available'))
+              : RefreshIndicator(
+                onRefresh: fetchJobsAndSave,
+                child: ListView.builder(
+                  itemCount: jobs.length,
+                  itemBuilder: (context, index) {
+                    final job = jobs[index];
+                    return Card(
+                      elevation: 4,
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (job['imageUrl'] != null &&
+                                job['imageUrl'].toString().isNotEmpty)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  job['imageUrl'],
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.broken_image, size: 48),
+                                          Text('Failed to load image'),
+                                        ],
                                       ),
-                                    ),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    job['jobTitle'] ?? 'No Title',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    _formatDate(job['postedAt']),
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    job['companyname'] ?? 'No Company',
-                                    style: TextStyle(fontSize: 16, color: Colors.blue),
-                                  ),
-                                  SizedBox(height: 12),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Color.fromARGB(255, 245, 57, 43),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => JobDetailsScreen(
-                                              job: job,
-                                              userEmail: widget.userEmail,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: Text('View Details', style: TextStyle(color: Colors.white)),
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              ),
+                            SizedBox(height: 12),
+                            Text(
+                              job['jobTitle'] ?? 'No Title',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
+                            Text(
+                              _formatDate(job['postedAt']),
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              job['companyname'] ?? 'No Company',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            // --- NEW ADDITIONS START HERE ---
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.monetization_on,
+                                  size: 18,
+                                  color: Colors.grey[700],
+                                ),
+                                SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    job['salary'] ?? 'Not disclosed',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 18,
+                                  color: Colors.grey[700],
+                                ),
+                                SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    job['location'] ?? 'Not specified',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.work,
+                                  size: 18,
+                                  color: Colors.grey[700],
+                                ),
+                                SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    job['experience'] ?? 'Not specified',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // --- NEW ADDITIONS END HERE ---
+                            SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color.fromARGB(
+                                    255,
+                                    245,
+                                    57,
+                                    43,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => JobDetailsScreen(
+                                            job: job,
+                                            userEmail: widget.userEmail,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'View Details',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                ),
+              ),
     );
   }
 }
