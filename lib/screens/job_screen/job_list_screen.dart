@@ -302,14 +302,39 @@ class JobListScreen extends StatefulWidget {
 
 class _JobListScreenState extends State<JobListScreen> {
   List<dynamic> jobs = [];
+  List<dynamic> filteredJobs = [];
   bool isLoading = true;
   String error = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_filterJobs);
     loadJobsFromHiveThenFetch();
   }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterJobs() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        filteredJobs = List.from(jobs);
+      } else {
+        filteredJobs = jobs.where((job) {
+          final company = job['companyname']?.toString().toLowerCase() ?? '';
+          final title = job['jobTitle']?.toString().toLowerCase() ?? '';
+          return company.contains(query) || title.contains(query);
+        }).toList();
+      }
+    });
+  }
+
 
   Future<void> loadJobsFromHiveThenFetch() async {
     // Open box if not opened
@@ -334,7 +359,6 @@ class _JobListScreenState extends State<JobListScreen> {
 
   Future<void> fetchJobsAndSave() async {
     setState(() {
-      // Only show loading if no jobs loaded yet
       if (jobs.isEmpty) isLoading = true;
       error = '';
     });
@@ -450,17 +474,32 @@ class _JobListScreenState extends State<JobListScreen> {
               ? Center(child: Text('No jobs available'))
               : RefreshIndicator(
                 onRefresh: fetchJobsAndSave,
-                child: ListView.builder(
-                  itemCount: jobs.length,
-                  itemBuilder: (context, index) {
-                    final job = jobs[index];
-                    return Card(
-                      elevation: 4,
-                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
+              child: ListView(
+  physics: const AlwaysScrollableScrollPhysics(),
+  children: [
+    Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search by company or job title',
+          prefixIcon: Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ),
+    ...filteredJobs.map((job) {
+      return Card(
+        elevation: 4,
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+         child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,9 +641,12 @@ class _JobListScreenState extends State<JobListScreen> {
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
+        ),
+      );
+    }).toList(),
+  ],
+),
+
               ),
     );
   }
