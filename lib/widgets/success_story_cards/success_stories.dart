@@ -122,7 +122,6 @@ class _SuccessStoryPageState extends State<SuccessStoryPage> with TickerProvider
         _animationControllers[story.id] = controller;
         playAnimation();
 
-        // Force stop after 2 seconds
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted && isAnimationActive) {
             isAnimationActive = false;
