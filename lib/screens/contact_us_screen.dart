@@ -143,7 +143,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               ListTile(
                 leading: const Icon(Icons.telegram, color: Colors.blueAccent),
                 title: const Text('Telegram'),
-                onTap: () => _launchURL('https://t.me/VibrantMinds'),
+                onTap: () => _launchURL('https://telegram.me/VibrantMinds'),
               ),
               ListTile(
                 leading: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),

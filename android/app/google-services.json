@@ -8,6 +8,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:907449237702:android:8873d675add5053dea17c7",
+        "android_client_info": {
+          "package_name": "com.example.cognito_auth_flutter_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB29bIr_lWxu_QmJJIb3MwCRc_h-W2AdyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:907449237702:android:bf871b53d01bda8aea17c7",
         "android_client_info": {
           "package_name": "com.example.untitled"
@@ -49,6 +68,25 @@
         "mobilesdk_app_id": "1:907449237702:android:69f225ca88d1e32bea17c7",
         "android_client_info": {
           "package_name": "com.example.user_end"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB29bIr_lWxu_QmJJIb3MwCRc_h-W2AdyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907449237702:android:3d7755b99400e05bea17c7",
+        "android_client_info": {
+          "package_name": "com.vibrantmind.myapp"
         }
       },
       "oauth_client": [],

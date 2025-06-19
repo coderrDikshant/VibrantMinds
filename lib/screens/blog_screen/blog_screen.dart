@@ -634,7 +634,7 @@ class _BlogScreenState extends State<BlogScreen> with TickerProviderStateMixin {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFF5F5F5), Color(0xFFFFFFFF)],
+            colors: [Color(0xFFD32F2F), Color(0xFFFFFFFF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

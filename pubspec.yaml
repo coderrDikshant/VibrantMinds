@@ -1,11 +1,10 @@
-name: user_end
+name: user_end 
 description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
   sdk: ^3.7.2
-
 
 dependencies:
   flutter:
@@ -24,7 +23,8 @@ dependencies:
   rive: ^0.13.20
   google_fonts: ^6.2.1
   hive: ^2.2.3
-
+  firebase_messaging: 15.2.6
+  flutter_local_notifications: 15.1.1
   hive_flutter: ^1.1.0
   path_provider: ^2.1.3
   get: ^4.7.2
@@ -39,18 +39,23 @@ dependencies:
   file_picker:
   flutter_quill: ^11.4.1
   flutter_quill_extensions: ^11.0.0
-  video_player:
-  flutter_native_splash:
-#  docx_to_text:
-#  riverpod: ^2.0.0
-#  flutter_3d_object: ^0.1.0
+  video_player: ^2.8.2
+  shimmer: ^3.0.0
+  rename: ^3.1.0
 
 dev_dependencies:
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.8
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+  build_runner: ^2.4.8
+  hive_generator: ^2.0.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/logo_image.png
 
 flutter:
   uses-material-design: true
@@ -69,6 +74,18 @@ flutter:
     - assets/animations/gold_medal.json
     - assets/animations/silver_medal.json
     - assets/animations/loading_trophy.json
-    - assets/animations/empty_trophy.json
     - assets/video/Logo_Animation.mp4
     - assets/video/Logo_Animation_4.mp4
+    - assets/images/logo_vibrant_minds.jpg
+    - assets/images/logo_vibrant_minds.png
+    - assets/images/logo_image.png
+    - assets/images/vmt.png
+
+flutter_native_splash:
+  color: "#000000"
+  image: assets/images/vmt.png
+  fullscreen: true
+  android: true
+  ios: true
+  android_gravity: center
+  ios_content_mode: scaleAspectFit

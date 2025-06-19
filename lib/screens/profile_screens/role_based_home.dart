@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:user_end/screens/job_screen/job_list_screen.dart';
 import '../../widgets/success_story_cards/success_stories.dart';
@@ -10,8 +10,8 @@ import '../../screens/contact_us_screen.dart';
 import '../../theme/vibrant_theme.dart';
 import '../../screens/bookmark_screen.dart';
 import '../../screens/notificaion_screen.dart';
-import '../../screens/chatbot_screen.dart';
-import '../../screens/view_profile_screen.dart'; // Added import for profile screen
+
+import '../../screens/view_profile_screen.dart';
 import '../../main.dart';
 
 class RoleBasedHome extends StatefulWidget {
@@ -56,13 +56,17 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   Future<void> _fetchUserAttributes() async {
     try {
       final result = await Amplify.Auth.fetchUserAttributes();
-      final email = result.firstWhere(
-        (attr) => attr.userAttributeKey.key == 'email',
-        orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.email,
-          value: '',
-        ),
-      ).value;
+      final email =
+          result
+              .firstWhere(
+                (attr) => attr.userAttributeKey.key == 'email',
+                orElse:
+                    () => const AuthUserAttribute(
+                      userAttributeKey: CognitoUserAttributeKey.email,
+                      value: '',
+                    ),
+              )
+              .value;
 
       setState(() {
         _userEmail = email;
@@ -88,21 +92,23 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     } else if (index == 6) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ContactUsScreen(userEmail: _userEmail)),
+        MaterialPageRoute(
+          builder: (_) => ContactUsScreen(userEmail: _userEmail),
+        ),
       );
     } else if (index == 7) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ViewProfileScreen(
-            userEmail: _userEmail,
-            userName: _firstName,
-          ),
+          builder:
+              (_) => ViewProfileScreen(
+                userEmail: _userEmail,
+                userName: _firstName,
+              ),
         ),
       );
     }
   }
-
 
   void _logout(BuildContext context) async {
     try {
@@ -115,16 +121,18 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       );
     } catch (e) {
       safePrint("Sign out error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logout failed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Logout failed')));
     }
   }
 
   void _bookmark(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AppliedJobsScreen(userEmail: _userEmail)),
+      MaterialPageRoute(
+        builder: (_) => AppliedJobsScreen(userEmail: _userEmail),
+      ),
     );
   }
 
@@ -135,22 +143,20 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     );
   }
 
-  void talkWithChatbot(BuildContext context, String userEmail, String userName) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatBotScreen(
-          userEmail: userEmail,
-          userName: userName,
-        ),
-      ),
-    );
+  void talkWithChatbot(
+    BuildContext context,
+    String userEmail,
+    String userName,
+  ) {
+    
   }
 
-  Widget _buildDrawerItem(BuildContext context,
-      {required IconData icon,
-      required String title,
-      required int pageIndex}) {
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required int pageIndex,
+  }) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFFD32F2F)),
       title: Text(
@@ -170,24 +176,27 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Confirm Logout'),
+            content: const Text('Are you sure you want to log out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                ),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _logout(context);
+                },
+                child: const Text('Logout'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F)),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _logout(context);
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -268,24 +277,48 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Column(
                       children: [
-                        _buildDrawerItem(context,
-                            icon: Icons.person, title: 'View Profile', pageIndex: 7),
-                        _buildDrawerItem(context,
-                            icon: Icons.home, title: 'Home', pageIndex: 0),
-                        _buildDrawerItem(context,
-                            icon: Icons.quiz, title: 'Quizzes', pageIndex: 1),
-                        _buildDrawerItem(context,
-                            icon: Icons.star, title: 'Success Stories', pageIndex: 2),
-                        _buildDrawerItem(context,
-                            icon: Icons.book, title: 'Blogs', pageIndex: 3),
-                        _buildDrawerItem(context,
-                            icon: Icons.work, title: 'Jobs', pageIndex: 4),
-                        // _buildDrawerItem(context,
-                        //     icon: Icons.feedback,
-                        //     title: 'Feedback',
-                        //     pageIndex: 5),
-                        _buildDrawerItem(context,
-                            icon: Icons.contact_support, title: 'Contact Us', pageIndex: 6),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.person,
+                          title: 'View Profile',
+                          pageIndex: 7,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.home,
+                          title: 'Home',
+                          pageIndex: 0,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.quiz,
+                          title: 'Quizzes',
+                          pageIndex: 1,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.star,
+                          title: 'Success Stories',
+                          pageIndex: 2,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.book,
+                          title: 'Blogs',
+                          pageIndex: 3,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.work,
+                          title: 'Jobs',
+                          pageIndex: 4,
+                        ),
+                        _buildDrawerItem(
+                          context,
+                          icon: Icons.contact_support,
+                          title: 'Contact Us',
+                          pageIndex: 6,
+                        ),
                         SwitchListTile(
                           title: const Text('Show ChatBot'),
                           value: _showChatBot,
@@ -319,7 +352,9 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD32F2F),
-                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10 : 12),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isSmallScreen ? 10 : 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -337,9 +372,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -365,7 +398,10 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_none, color: Color(0xFFD32F2F)),
+                icon: const Icon(
+                  Icons.notifications_none,
+                  color: Color(0xFFD32F2F),
+                ),
                 onPressed: () => _showNotifications(context),
                 tooltip: 'Notifications',
               ),
@@ -404,35 +440,16 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
               });
             },
             children: [
-             HomeScreen(
-  navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
-  username: _firstName,  // only first name here
-  email: _userEmail,
-),
-
-
-QuizEntryScreen(name: _firstName, email: _userEmail),
-
-SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
-
-BlogScreen(userEmail: _userEmail, userName: _firstName),
-JobListScreen(userEmail: _userEmail),        // <-- index 4
-  // FeedbackScreen(userEmail: _userEmail),                            // <-- index 5
-
-
- // Added Profile screen
               HomeScreen(
-                navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
-                username: _firstName, // only first name here
+                navigateTo:
+                    (context, route) => _navigateTo(_getPageIndex(route)),
+                username: _firstName,
                 email: _userEmail,
               ),
               QuizEntryScreen(name: _firstName, email: _userEmail),
               SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
               BlogScreen(userEmail: _userEmail, userName: _firstName),
               JobListScreen(userEmail: _userEmail),
-              FeedbackScreen(userEmail: _userEmail),
-              ContactUsScreen(userEmail: _userEmail),
-              ViewProfileScreen(userEmail: _userEmail, userName: _firstName),
             ],
           ),
           if (_showChatBot)
@@ -488,7 +505,11 @@ JobListScreen(userEmail: _userEmail),        // <-- index 4
   }
 
   Widget _buildNavItem(
-      int index, IconData activeIcon, IconData inactiveIcon, String label) {
+    int index,
+    IconData activeIcon,
+    IconData inactiveIcon,
+    String label,
+  ) {
     final bool isActive = _currentIndex == index;
     return GestureDetector(
       onTap: () {
@@ -532,8 +553,6 @@ JobListScreen(userEmail: _userEmail),        // <-- index 4
         return 3;
       case 'job':
         return 4;
-      // case 'Feedback':
-      //   return 5;
       case 'Contact Us':
         return 6;
       case 'profile':

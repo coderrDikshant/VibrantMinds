@@ -1,4 +1,4 @@
-package com.example.user_end
+package com.vibrantmind.myapp
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -7,7 +7,7 @@ import android.view.WindowManager
 
 class MainActivity: FlutterActivity() {
     // Define the channel name. This must match the name used in your ScreenshotService.dart.
-    private val CHANNEL = "com.example.user_end/screenshot_protector" // <--- IMPORTANT: Change 'com.your_app_name' to 'com.example.user_end'
+    private val CHANNEL = "com.vibrantmind.myapp/screenshot_protector" // <--- IMPORTANT: Change 'com.your_app_name' to 'com.vibrantmind.myapp'
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

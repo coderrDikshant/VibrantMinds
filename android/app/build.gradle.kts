@@ -1,44 +1,76 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("com.google.gms.google-services")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    println("Loaded key.properties: ${keystoreProperties.stringPropertyNames()}")
+    println("storeFile path: ${keystoreProperties["storeFile"]}")
+} else {
+    throw GradleException("key.properties file not found at ${keystorePropertiesFile.absolutePath}")
+}
+
 android {
-    namespace = "com.example.user_end"
+    namespace = "com.vibrantmind.myapp"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
-
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.user_end"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.vibrantmind.myapp"
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+   signingConfigs {
+    create("release") {
+        keyAlias = keystoreProperties["keyAlias"]?.toString()
+        keyPassword = keystoreProperties["keyPassword"]?.toString()
+        storePassword = keystoreProperties["storePassword"]?.toString()
+        val storeFilePath = keystoreProperties["storeFile"]?.toString()
+        if (!storeFilePath.isNullOrBlank()) {
+            val keystoreFile = file(storeFilePath) // Store in a local variable
+            if (!keystoreFile.exists()) {
+                throw GradleException("Keystore file not found at: $storeFilePath")
+            }
+            storeFile = keystoreFile // Assign to the property after validation
+        } else {
+            throw GradleException("storeFile path is missing in key.properties")
         }
+    }
+}
+
+
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }
 
@@ -48,4 +80,5 @@ flutter {
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

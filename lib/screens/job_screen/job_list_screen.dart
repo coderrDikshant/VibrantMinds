@@ -347,11 +347,13 @@ class _JobListScreenState extends State<JobListScreen> {
     // Load jobs from Hive immediately if available
     final storedJobs = jobsBox.get('jobsList');
     if (storedJobs != null && storedJobs is List) {
-      setState(() {
-        jobs = storedJobs.cast<dynamic>();
-        isLoading = false; // We have data to show now
-      });
-    }
+  setState(() {
+    jobs = storedJobs.cast<dynamic>();
+    filteredJobs = jobs; // Add this line
+    isLoading = false;
+  });
+}
+
 
     // Now fetch fresh jobs from network in background
     await fetchJobsAndSave();
@@ -406,11 +408,12 @@ class _JobListScreenState extends State<JobListScreen> {
         await jobsBox.put('jobsList', freshJobs);
 
         // Update UI only if freshJobs is different or if no jobs loaded before
-        setState(() {
-          jobs = freshJobs;
-          isLoading = false;
-          error = '';
-        });
+       setState(() {
+  jobs = freshJobs;
+  filteredJobs = jobs; // Add this line
+  isLoading = false;
+  error = '';
+});
       } else {
         throw Exception(
           'API request failed with status ${response.statusCode}',
