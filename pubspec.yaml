@@ -42,6 +42,8 @@ dependencies:
   video_player: ^2.8.2
   shimmer: ^3.0.0
   rename: ^3.1.0
+  url_launcher: ^6.2.4
+
 
 dev_dependencies:
   flutter_test:

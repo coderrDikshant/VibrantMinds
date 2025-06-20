@@ -628,17 +628,9 @@ class _BlogScreenState extends State<BlogScreen> with TickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Blogs'),
-        backgroundColor: const Color(0xFFff5722), // Match splash screen theme
-        foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFD32F2F), Color(0xFFFFFFFF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: RefreshIndicator(
           onRefresh: _refreshBlogs,
           color: const Color(0xFFD32F2F),

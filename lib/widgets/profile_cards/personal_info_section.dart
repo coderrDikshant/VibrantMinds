@@ -64,8 +64,6 @@ void _printFCMToken() async {
     String? token = await FirebaseMessaging.instance.getToken();
     if (token != null) {
       print('🔑 Device FCM Token: $token');
-
-      // Save it to Hive
       final tokenBox = await Hive.openBox('fcmBox');
       await tokenBox.put('fcmToken', token);
     } else {

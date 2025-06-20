@@ -5,14 +5,13 @@ import '../../widgets/success_story_cards/success_stories.dart';
 import '../../screens/quiz_screens/quiz_entry_screen.dart';
 import '../../screens/blog_screen/blog_screen.dart';
 import '../../screens/home_screen/home_screen.dart';
-import '../../screens/feedback_screen.dart';
 import '../../screens/contact_us_screen.dart';
 import '../../theme/vibrant_theme.dart';
 import '../../screens/bookmark_screen.dart';
 import '../../screens/notificaion_screen.dart';
-
 import '../../screens/view_profile_screen.dart';
 import '../../main.dart';
+
 
 class RoleBasedHome extends StatefulWidget {
   final String firstName;
@@ -38,8 +37,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
 
   bool _loading = true;
 
-  bool _showChatBot = true;
-  Offset _chatBotPosition = const Offset(20, 400);
 
   @override
   void initState() {
@@ -319,16 +316,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                           title: 'Contact Us',
                           pageIndex: 6,
                         ),
-                        SwitchListTile(
-                          title: const Text('Show ChatBot'),
-                          value: _showChatBot,
-                          onChanged: (value) {
-                            setState(() {
-                              _showChatBot = value;
-                            });
-                          },
-                          secondary: const Icon(Icons.smart_toy),
-                        ),
+                        
                       ],
                     ),
                   ),
@@ -430,77 +418,63 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
         ],
       ),
       drawer: _buildDrawer(),
-      body: Stack(
+      body: SafeArea(
+  child: Stack(
+    children: [
+      PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            children: [
-              HomeScreen(
-                navigateTo:
-                    (context, route) => _navigateTo(_getPageIndex(route)),
-                username: _firstName,
-                email: _userEmail,
-              ),
-              QuizEntryScreen(name: _firstName, email: _userEmail),
-              SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
-              BlogScreen(userEmail: _userEmail, userName: _firstName),
-              JobListScreen(userEmail: _userEmail),
-            ],
+          HomeScreen(
+            navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
+            username: _firstName,
+            email: _userEmail,
           ),
-          if (_showChatBot)
-            Positioned(
-              left: _chatBotPosition.dx,
-              top: _chatBotPosition.dy,
-              child: GestureDetector(
-                onPanUpdate: (details) {
-                  setState(() {
-                    _chatBotPosition += details.delta;
-                  });
-                },
-                child: FloatingActionButton(
-                  backgroundColor: const Color(0xFFD32F2F),
-                  onPressed: () {
-                    talkWithChatbot(context, _userEmail, _firstName);
-                  },
-                  child: const Icon(Icons.chat, color: Colors.white),
-                  tooltip: 'Chat with us',
-                ),
-              ),
-            ),
+          QuizEntryScreen(name: _firstName, email: _userEmail),
+          SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
+          BlogScreen(userEmail: _userEmail, userName: _firstName),
+          JobListScreen(userEmail: _userEmail),
         ],
       ),
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: VibrantTheme.surfaceColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+    ],
+  ),
+),
+
+      bottomNavigationBar: SafeArea(
+  top: false,
+  child: Container(
+    height: 70,
+    decoration: BoxDecoration(
+      color: VibrantTheme.surfaceColor,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.3),
+          blurRadius: 10,
+          offset: const Offset(0, -5),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(0, Icons.home, Icons.home_outlined, "Home"),
-            _buildNavItem(1, Icons.quiz, Icons.quiz_outlined, "Quiz"),
-            _buildNavItem(2, Icons.star, Icons.star_outline, "Stories"),
-            _buildNavItem(3, Icons.article, Icons.article_outlined, "Blog"),
-            _buildNavItem(4, Icons.work, Icons.work_outline, "Jobs"),
-          ],
-        ),
+      ],
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
       ),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildNavItem(0, Icons.home, Icons.home_outlined, "Home"),
+        _buildNavItem(1, Icons.quiz, Icons.quiz_outlined, "Quiz"),
+        _buildNavItem(2, Icons.star, Icons.star_outline, "Stories"),
+        _buildNavItem(3, Icons.article, Icons.article_outlined, "Blog"),
+        _buildNavItem(4, Icons.work, Icons.work_outline, "Jobs"),
+      ],
+    ),
+  ),
+),
+
     );
   }
 

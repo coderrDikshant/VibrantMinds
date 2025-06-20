@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 class ContactUsScreen extends StatefulWidget {
   final String userEmail;
 
@@ -64,16 +66,22 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     }
   }
 
-  Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch URL')),
-      );
-    }
+Future<void> _launchURL(String url) async {
+  final Uri uri = Uri.parse(url);
+
+  if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not launch URL')),
+    );
   }
+}
+
+void _showErrorSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
+
 
   @override
   void dispose() {
@@ -154,11 +162,6 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 leading: const Icon(Icons.mail_outline, color: Colors.deepOrange),
                 title: const Text('Email'),
                 onTap: () => _launchURL('mailto:Vmttalent@gmail.com'),
-              ),
-              ListTile(
-                leading: const FaIcon(FontAwesomeIcons.youtube, color: Colors.red),
-                title: const Text('YouTube'),
-                onTap: () => _launchURL('https://www.youtube.com/@vibrantmindsitjobscareers3793'),
               ),
 
               const SizedBox(height: 32),
