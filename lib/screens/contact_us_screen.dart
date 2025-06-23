@@ -95,7 +95,6 @@ void _showErrorSnackBar(String message) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contact Us'),
-        backgroundColor: const Color(0xFFD32F2F),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -120,6 +119,7 @@ void _showErrorSnackBar(String message) {
                 leading: const Icon(Icons.location_on, color: Colors.red),
                 title: const Text('VibrantMinds Technologies Pvt. Ltd.'),
                 subtitle: const Text('2nd Floor, Viva Building, Near St. Mary’s Church & Vardhman Petrol Pump, Mumbai-Bangalore Highway, Warje, Pune 411058'),
+                onTap: () => _launchURL('https://www.google.com/maps/place/VibrantMinds+Technologies+Pvt.+Ltd.+%7C+Java+FullStack+%7C+Fresher+Placements/@18.4834582,73.8021692,17z/data=!3m1!4b1!4m6!3m5!1s0x3bc2be329b00062b:0xaa299b79290519a7!8m2!3d18.4834582!4d73.8021692!16s%2Fg%2F11dxnp36q8?entry=ttu&g_ep=EgoyMDI1MDYxNy4wIKXMDSoASAFQAw%3D%3D'),
               ),
               ListTile(
                 leading: const Icon(Icons.web, color: Colors.red),
@@ -129,6 +129,7 @@ void _showErrorSnackBar(String message) {
               ListTile(
                 leading: const Icon(Icons.phone, color: Colors.red),
                 title: const Text('9503579517'),
+                onTap: () => _launchPhone('9503579517'),
               ),
 
               /// --- Social Links ---
@@ -166,67 +167,24 @@ void _showErrorSnackBar(String message) {
 
               const SizedBox(height: 32),
 
-              /// --- Contact Form ---
-              // Form(
-              //   key: _formKey,
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       const Text(
-              //         'Send Us a Message',
-              //         style: TextStyle(
-              //           fontSize: 20,
-              //           fontWeight: FontWeight.bold,
-              //           fontFamily: 'Poppins',
-              //           color: Color(0xFF000000),
-              //         ),
-              //       ),
-              //       const SizedBox(height: 16),
-              //       TextFormField(
-              //         controller: _nameController,
-              //         decoration: _inputDecoration('Your Name'),
-              //         validator: (value) => value!.isEmpty ? 'Enter your name' : null,
-              //       ),
-              //       const SizedBox(height: 16),
-              //       TextFormField(
-              //         controller: _messageController,
-              //         maxLines: 5,
-              //         decoration: _inputDecoration('Your Message'),
-              //         validator: (value) => value!.isEmpty ? 'Enter your message' : null,
-              //       ),
-              //       const SizedBox(height: 16),
-              //       Align(
-              //         alignment: Alignment.centerRight,
-              //         child: ElevatedButton(
-              //           onPressed: _isSubmitting ? null : _submitContact,
-              //           style: ElevatedButton.styleFrom(
-              //             backgroundColor: const Color(0xFFD32F2F),
-              //             shape: RoundedRectangleBorder(
-              //               borderRadius: BorderRadius.circular(12),
-              //             ),
-              //             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              //           ),
-              //           child: _isSubmitting
-              //               ? Lottie.asset('assets/animations/loading_animation.json', width: 24, height: 24)
-              //               : const Text(
-              //             'Send',
-              //             style: TextStyle(
-              //               color: Colors.white,
-              //               fontFamily: 'Roboto',
-              //               fontWeight: FontWeight.w600,
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
             ],
           ),
         ),
       ),
     );
   }
+
+  void _launchPhone(String phoneNumber) async {
+  final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+  if (await canLaunchUrl(phoneUri)) {
+    await launchUrl(phoneUri);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not launch phone dialer')),
+    );
+  }
+}
+
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(

@@ -369,189 +369,203 @@ class _QuizScreenState extends State<QuizScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Show a loading animation while questions are being fetched
-    if (_questions.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Lottie.asset(
-            'assets/animations/loading_animation.json',
-            width: 100,
-            height: 100,
-          ),
-        ),
-      );
-    }
-
-    final question = _questions[_currentIndex];
-
-    // Use WillPopScope to control back button behavior
-    return PopScope(
-      canPop: false, // Prevents default back button behavior
-      onPopInvoked: (didPop) async {
-        if (didPop) return; // If pop is already handled by system, do nothing
-        await _handleBackPress(); // Custom back press handling
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.quiz.set,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-          centerTitle: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.grid_view),
-              tooltip: 'Question Map',
-              onPressed: _goToMapScreen, // Navigate to question map
-            ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [VibrantTheme.backgroundColor, Colors.white],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Timer display with warning animation
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.access_time, size: 28, color: Colors.black87),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatTime(_remainingSeconds),
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: _remainingSeconds <= 60 ? Colors.red : Colors.black87,
-                          ),
-                        ),
-                        // Show warning Lottie animation if time is running out
-                        if (_remainingSeconds <= 60) ...[
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 30,
-                            height: 30,
-                            child: Lottie.asset('assets/animations/warning.json'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  // Current question display with fade animation
-                  Expanded(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: QuestionWidget(
-                        question: question,
-                        questionNumber: _currentIndex + 1,
-                        quizSetTitle: widget.quiz.title,
-                        selectedAnswer: question.selectedOption,
-                        onAnswerSelected: (value) {
-                          setState(() {
-                            question.selectedOption = value;
-                            _markAnswered(); // Mark question as answered
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Action buttons for navigation and review
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _ActionButton(
-                        text: 'Prev',
-                        onPressed: _goToPreviousQuestion,
-                        enabled: _currentIndex > 0, // Enable only if not on first question
-                      ),
-                      _ActionButton(
-                        text: 'Skip',
-                        onPressed: _markSkipped,
-                      ),
-                      _ActionButton(
-                        text: 'Mark Review',
-                        onPressed: _markForReview,
-                      ),
-                      _ActionButton(
-                        text: 'Next',
-                        onPressed: _goToNextQuestion,
-                        enabled: _currentIndex < _questions.length - 1, // Enable only if not on last question
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Submit Quiz button
-                  Center(
-                    child: _ActionButton(
-                      text: 'Submit Quiz',
-                      icon: Icons.check,
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Submit Quiz?'),
-                            content: const Text(
-                                'Are you sure you want to submit the quiz? You cannot change your answers after submission.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.of(context).pop(true),
-                                child: const Text('Submit'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true && mounted) {
-                          await _submitQuiz(); // Submit quiz if user confirms
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Overlay for "Time's Up!" animation
-            if (_showTimeUp)
-              Container(
-                color: Colors.black54, // Semi-transparent black background
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Lottie.asset(
-                        'assets/animations/time_up.json', // Your "Time's Up" animation
-                        width: 200,
-                        height: 200,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Time’s Up!',
-                        style: VibrantTheme.themeData.textTheme.headlineLarge?.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
+  @override
+Widget build(BuildContext context) {
+  // Show a loading animation while questions are being fetched
+  if (_questions.isEmpty) {
+    return Scaffold(
+      body: Center(
+        child: Lottie.asset(
+          'assets/animations/loading_animation.json',
+          width: 100,
+          height: 100,
         ),
       ),
     );
   }
+
+  final question = _questions[_currentIndex];
+
+  return PopScope(
+    canPop: false,
+    onPopInvoked: (didPop) async {
+      if (didPop) return;
+      await _handleBackPress();
+    },
+    child: Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.quiz.set,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.grid_view),
+            tooltip: 'Question Map',
+            onPressed: _goToMapScreen,
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [VibrantTheme.backgroundColor, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Timer with optional warning animation
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.access_time, size: 28, color: Colors.black87),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(_remainingSeconds),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: _remainingSeconds <= 60 ? Colors.red : Colors.black87,
+                        ),
+                      ),
+                      if (_remainingSeconds <= 60) ...[
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: Lottie.asset('assets/animations/warning.json'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Scrollable content: question + nav buttons
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: QuestionWidget(
+                            question: question,
+                            questionNumber: _currentIndex + 1,
+                            quizSetTitle: widget.quiz.title,
+                            selectedAnswer: question.selectedOption,
+                            onAnswerSelected: (value) {
+                              setState(() {
+                                question.selectedOption = value;
+                                _markAnswered();
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Navigation buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _ActionButton(
+                              text: 'Prev',
+                              onPressed: _goToPreviousQuestion,
+                              enabled: _currentIndex > 0,
+                            ),
+                            _ActionButton(
+                              text: 'Skip',
+                              onPressed: _markSkipped,
+                            ),
+                            _ActionButton(
+                              text: 'Mark Review',
+                              onPressed: _markForReview,
+                            ),
+                            _ActionButton(
+                              text: 'Next',
+                              onPressed: _goToNextQuestion,
+                              enabled: _currentIndex < _questions.length - 1,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Submit button pinned at bottom
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: _ActionButton(
+                    text: 'Submit Quiz',
+                    icon: Icons.check,
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Submit Quiz?'),
+                          content: const Text(
+                            'Are you sure you want to submit the quiz? You cannot change your answers after submission.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Submit'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true && mounted) {
+                        await _submitQuiz();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Time’s Up overlay
+          if (_showTimeUp)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Lottie.asset(
+                      'assets/animations/time_up.json',
+                      width: 200,
+                      height: 200,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Time’s Up!',
+                      style: VibrantTheme.themeData.textTheme.headlineLarge?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 }
 
 // Re-using your existing _ActionButton widget for consistent styling and animation

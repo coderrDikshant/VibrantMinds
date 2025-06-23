@@ -40,58 +40,55 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quiz Results'),
-      ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [VibrantTheme.backgroundColor, Colors.white],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Quiz Results'),
+    ),
+    body: Stack(
+      children: [
+        // Background animation behind everything
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.2,
+            child: Lottie.asset(
+              'assets/animations/particle_animation.json',
+              fit: BoxFit.cover,
+              repeat: true,
             ),
+          ),
+        ),
+
+        // Scrollable content above the background
+        FadeTransition(
+          opacity: _fadeAnimation,
+          child: ListView(
             padding: const EdgeInsets.all(12),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ListView(
-                children: [
-                  _buildHeaderInfo(),
-                  const SizedBox(height: 16),
-                  _buildScoreSummary(),
-                  const Divider(height: 32, thickness: 1.5),
-                  Text(
-                    'Questions Overview:',
-                    style: VibrantTheme.themeData.textTheme.headlineLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  ...widget.stats.questions.map((q) => _buildQuestionCard(q)).toList(),
-                ],
+            children: [
+              _buildHeaderInfo(),
+              const SizedBox(height: 16),
+              _buildScoreSummary(),
+              const Divider(height: 32, thickness: 1.5),
+              Text(
+                'Questions Overview:',
+                style: VibrantTheme.themeData.textTheme.headlineLarge,
               ),
-            ),
-          ),
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.5,
-              child: Lottie.asset(
-                'assets/animations/particle_animation.json',
+              const SizedBox(height: 8),
 
-                // 'https://assets.lottiefiles.com/packages/lf20_jbdmfj13.json',
-                fit: BoxFit.cover,
-                // width: 150,
-                // height: MediaQuery.of(context).size.height,
-              ),
-            ),
+              // Numbered question list
+              ...List.generate(widget.stats.questions.length, (index) {
+                final question = widget.stats.questions[index];
+                return _buildQuestionCard(question, index + 1);
+              }),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  );
+}
 
-    );
-  }
 
   Widget _buildHeaderInfo() {
     return Card(
@@ -194,48 +191,49 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildQuestionCard(Question question) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Colors.white, Color(0xFFF9F9F9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              question.question,
-              style: VibrantTheme.themeData.textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Your Answer: ${question.selectedOption ?? "Not Answered"}',
-              style: TextStyle(
-                color: question.selectedOption == question.correctAnswer ? Colors.green : Colors.red,
-              ),
-            ),
-            Text(
-              'Correct Answer: ${question.correctAnswer}',
-              style: VibrantTheme.themeData.textTheme.bodyLarge,
-            ),
-            if (question.explanation.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Explanation: ${question.explanation}',
-                  style: VibrantTheme.themeData.textTheme.bodyMedium,
-                ),
-              ),
-          ],
+ Widget _buildQuestionCard(Question question, int number) {
+  return Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF9F9F9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-    );
-  }
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$number.',
+            style: VibrantTheme.themeData.textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your Answer: ${question.selectedOption ?? "Not Answered"}',
+            style: TextStyle(
+              color: question.selectedOption == question.correctAnswer ? Colors.green : Colors.red,
+            ),
+          ),
+          Text(
+            'Correct Answer: ${question.correctAnswer}',
+            style: VibrantTheme.themeData.textTheme.bodyLarge,
+          ),
+          if (question.explanation.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Explanation: ${question.explanation}',
+                style: VibrantTheme.themeData.textTheme.bodyMedium,
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 }

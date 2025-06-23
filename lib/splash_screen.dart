@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -248,79 +248,62 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _initializationDone = false;
-  bool _minimumDisplayDone = false;
+  double _revealPercent = 0.0;
+  double _opacity = 1.0;
 
   @override
   void initState() {
     super.initState();
-    _startInitialization();
-    _startMinimumDisplayTimer();
-  }
 
-  // Simulates 2s minimum display of the splash image
-  void _startMinimumDisplayTimer() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _minimumDisplayDone = true);
-      _checkNavigationReady();
-    }
-  }
+    // Start left-to-right reveal after frame renders
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _revealPercent = 1.0;
+      });
 
-  void _startInitialization() async {
-    try {
-      await Future.wait([
-        _initHiveBoxes(),
-        _checkAmplifyAuth(),
-      ]);
-    } catch (e) {
-      debugPrint("Initialization error: $e");
-    }
+      // Start fade out after reveal is done
+      Future.delayed(const Duration(seconds: 2), () {
+        setState(() => _opacity = 0.0);
 
-    if (mounted) {
-      setState(() => _initializationDone = true);
-      _checkNavigationReady();
-    }
-  }
-
-  void _checkNavigationReady() {
-    if (_initializationDone && _minimumDisplayDone) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const CombinedRedirector()),
-      );
-    }
-  }
-
-  // You can customize these further
-  Future<void> _initHiveBoxes() async {
-    if (!Hive.isBoxOpen('profileBox')) {
-      await Hive.openBox('profileBox');
-    }
-  }
-
-  Future<void> _checkAmplifyAuth() async {
-    if (!Amplify.isConfigured) return;
-
-    try {
-      await Amplify.Auth.fetchAuthSession();
-    } on AuthException catch (e) {
-      safePrint('Auth error in splash: ${e.message}');
-    } catch (e) {
-      safePrint('Unknown error in splash: $e');
-    }
+        // Navigate to CombinedRedirector after fade-out
+        Future.delayed(const Duration(milliseconds: 800), () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const CombinedRedirector()),
+          );
+        });
+      });
+    });
   }
 
   @override
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    body: SizedBox.expand(
-      child: Image.asset(
-        'assets/images/logo_vibrant_minds.jpg',
-        fit: BoxFit.cover, 
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: AnimatedOpacity(
+          opacity: _opacity,
+          duration: const Duration(milliseconds: 600),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: _revealPercent),
+            duration: const Duration(seconds: 2),
+            curve: Curves.easeOut,
+            builder: (context, value, child) {
+              return ClipRect(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: value, // This reveals image from left to right
+                  child: child,
+                ),
+              );
+            },
+            child: Image.asset(
+              'assets/images/vmt.png',
+              width: MediaQuery.of(context).size.width * 0.9,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

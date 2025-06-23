@@ -8,7 +8,7 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'dart:async';
 import 'firebase_options.dart';
 import 'amplifyconfiguration.dart';
 import 'services/firestore_service.dart';
@@ -51,11 +51,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await _initializeServices();
-
   runApp(const AuthApp());
+ _initializeServices();
 }
+
 
 Future<void> _initializeServices() async {
   await Hive.initFlutter();

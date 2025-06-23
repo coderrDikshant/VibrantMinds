@@ -11,7 +11,7 @@ import '../../screens/bookmark_screen.dart';
 import '../../screens/notificaion_screen.dart';
 import '../../screens/view_profile_screen.dart';
 import '../../main.dart';
-
+import 'package:hive_flutter/hive_flutter.dart';
 
 class RoleBasedHome extends StatefulWidget {
   final String firstName;
@@ -110,7 +110,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   void _logout(BuildContext context) async {
     try {
       await Amplify.Auth.signOut();
-
+      var profileBox = await Hive.openBox('profileBox');
+       var jobCacheBox = await Hive.openBox('jobCacheBox');
+       var fcmBox = await Hive.openBox('fcmBox');
+       await profileBox.clear();
+       await jobCacheBox.clear();
+       await fcmBox.clear();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const AuthApp()),
@@ -233,22 +238,51 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Flexible(
-                      child: Text(
-                        (_firstName.isNotEmpty && _lastName.isNotEmpty)
-                            ? '$_firstName $_lastName'
-                            : 'Guest User',
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 16 : 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
+                    Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Flexible(
+      child: Text(
+        (_firstName.isNotEmpty && _lastName.isNotEmpty)
+            ? '$_firstName $_lastName'
+            : 'Guest User',
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: isSmallScreen ? 16 : 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontFamily: 'Poppins',
+        ),
+      ),
+    ),
+    const SizedBox(width: 6),
+   GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ViewProfileScreen(
+          userEmail: _userEmail,
+          userName: _firstName,
+        ),
+      ),
+    );
+  },
+  behavior: HitTestBehavior.translucent, // Makes full area tappable
+  child: Padding(
+    padding: const EdgeInsets.all(8.0), // Expand hit area without enlarging icon
+    child: const Icon(
+      Icons.edit,
+      size: 18,
+      color: Colors.white,
+    ),
+  ),
+),
+
+  ],
+),
+
                     const SizedBox(height: 4),
                     Flexible(
                       child: Text(
@@ -274,12 +308,12 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Column(
                       children: [
-                        _buildDrawerItem(
-                          context,
-                          icon: Icons.person,
-                          title: 'View Profile',
-                          pageIndex: 7,
-                        ),
+                        // _buildDrawerItem(
+                        //   context,
+                        //   icon: Icons.person,
+                        //   title: 'View Profile',
+                        //   pageIndex: 7,
+                        // ),
                         _buildDrawerItem(
                           context,
                           icon: Icons.home,
@@ -393,25 +427,18 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                 onPressed: () => _showNotifications(context),
                 tooltip: 'Notifications',
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFD32F2F),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   right: 8,
+              //   top: 8,
+              //   child: Container(
+              //     padding: const EdgeInsets.all(4),
+              //     decoration: const BoxDecoration(
+              //       color: Color(0xFFD32F2F),
+              //       shape: BoxShape.circle,
+              //     ),
+                 
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(width: 8),

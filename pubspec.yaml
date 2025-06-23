@@ -1,7 +1,7 @@
 name: user_end 
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+4
 
 environment:
   sdk: ^3.7.2
@@ -43,6 +43,7 @@ dependencies:
   shimmer: ^3.0.0
   rename: ^3.1.0
   url_launcher: ^6.2.4
+  cached_network_image: ^3.3.1
 
 
 dev_dependencies:
@@ -83,11 +84,11 @@ flutter:
     - assets/images/logo_image.png
     - assets/images/vmt.png
 
-flutter_native_splash:
-  color: "#000000"
-  image: assets/images/vmt.png
-  fullscreen: true
-  android: true
-  ios: true
-  android_gravity: center
-  ios_content_mode: scaleAspectFit
+# flutter_native_splash:
+#   color: "#FFFFFF"
+#   image: assets/images/vmt.png
+#   fullscreen: true
+#   android: true
+#   ios: true
+#   android_gravity: center
+#   ios_content_mode: scaleAspectFit

@@ -60,142 +60,147 @@ class _InstructionScreenState extends State<InstructionScreen> with SingleTicker
         title: const Text('Instructions'),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [VibrantTheme.backgroundColor, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [VibrantTheme.backgroundColor, Colors.white],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+  ),
+  child: SafeArea(
+    child: Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Quiz Instructions',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      color: VibrantTheme.primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ...[
+                  'Each question has one correct answer.',
+                  'You can mark a question for review.',
+                  'Use the map icon to navigate between questions.',
+                  'Once started, you cannot go back until submission.',
+                  'Quiz will auto-submit after the timer runs out.',
+                  'No tab switching or taking screenshots allowed.',
+                ].asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final text = entry.value;
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      final animation = CurvedAnimation(
+                        parent: _controller,
+                        curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
+                      );
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.5),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _buildInstructionText('• $text', theme),
+                  );
+                }).toList(),
+                const SizedBox(height: 20),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Text(
+                    'Question Status Colors:',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: VibrantTheme.textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...[
+                  {'text': 'Answered: Green', 'color': Colors.green.shade600},
+                  {'text': 'Marked for Review: Yellow', 'color': Colors.amber.shade600},
+                  {'text': 'Skipped: Red', 'color': Colors.red.shade600},
+                  {
+                    'text': 'Unvisited: White',
+                    'color': theme.colorScheme.surface,
+                    'textColor': Colors.black87
+                  },
+                ].asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      final animation = CurvedAnimation(
+                        parent: _controller,
+                        curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
+                      );
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.5),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _buildColoredInstruction(
+                      item['text'] as String,
+                      item['color'] as Color,
+                      theme,
+                      textColor: item['textColor'] as Color?,
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
           ),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: size.height - kToolbarHeight - MediaQuery.of(context).padding.top,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      'Quiz Instructions',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        color: VibrantTheme.primaryColor,
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => QuizScreen(
+                        name: widget.name,
+                        email: widget.email,
+                        category: widget.category,
+                        quiz: widget.quiz,
+                        difficulty: widget.difficulty,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  ...[
-                    'Each question has one correct answer.',
-                    'You can mark a question for review.',
-                    'Use the map icon to navigate between questions.',
-                    'Once started, you cannot go back until submission.',
-                    'Quiz will auto-submit after the timer runs out.',
-                    'No tab switching or taking screenshots allowed.',
-                  ].asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final text = entry.value;
-                    return AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, child) {
-                        final animation = CurvedAnimation(
-                          parent: _controller,
-                          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
-                        );
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.5),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _buildInstructionText('• $text', theme),
-                    );
-                  }).toList(),
-                  const SizedBox(height: 20),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      'Question Status Colors:',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: VibrantTheme.textColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ...[
-                    {'text': 'Answered: Green', 'color': Colors.green.shade600},
-                    {'text': 'Marked for Review: Yellow', 'color': Colors.amber.shade600},
-                    {'text': 'Skipped: Red', 'color': Colors.red.shade600},
-                    {
-                      'text': 'Unvisited: White',
-                      'color': theme.colorScheme.surface,
-                      'textColor': Colors.black87
-                    },
-                  ].asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    return AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, child) {
-                        final animation = CurvedAnimation(
-                          parent: _controller,
-                          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOut),
-                        );
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.5),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _buildColoredInstruction(
-                        item['text'] as String,
-                        item['color'] as Color,
-                        theme,
-                        textColor: item['textColor'] as Color?,
-                      ),
-                    );
-                  }).toList(),
-                  const Spacer(),
-                  Center(
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => QuizScreen(
-                                name: widget.name,
-                                email: widget.email,
-                                category: widget.category,
-                                quiz: widget.quiz,
-                                difficulty: widget.difficulty,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Start Quiz'),
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                },
+                child: const Text('Start Quiz'),
               ),
             ),
           ),
         ),
-      ),
+      ],
+    ),
+  ),
+),
+
     );
   }
 
