@@ -289,7 +289,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 }
 
-// -------------------- JobListScreen ------------------------
+
 
 class JobListScreen extends StatefulWidget {
   final String userEmail;

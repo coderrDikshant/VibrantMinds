@@ -458,14 +458,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(20), // Increased padding
+          padding: const EdgeInsets.all(20), 
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20), // More rounded corners
+            borderRadius: BorderRadius.circular(20), 
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(
                   0.08,
-                ), // Softer, less intense shadow
+                ), 
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
@@ -474,7 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
               colors: [
                 Colors.white,
                 Color(0xFFF0F2F5),
-              ], // Slightly varied gradient
+              ], 
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -487,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.black87,
-                  height: 1.6, // Increased line height for readability
+                  height: 1.6, 
                   fontFamily: 'Roboto',
                 ),
               ),
@@ -495,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.only(
                     top: 20,
-                  ), // More space above button
+                  ), 
                   child: SizedBox(
                     width: double.infinity, // Make button full width
                     child: ElevatedButton(
@@ -509,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
-                          vertical: 14, // Increased vertical padding
+                          vertical: 14, 
                         ),
                         elevation: 4, // Add a subtle elevation to the button
                       ),
