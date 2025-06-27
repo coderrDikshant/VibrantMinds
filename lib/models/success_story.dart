@@ -5,7 +5,7 @@ class SuccessStory {
   final String title;
   final String description;
   final String imageUrl;
-  final int likes;
+  int likes;
   final int commentCount;
   final DateTime timestamp;
 
