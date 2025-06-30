@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 class VibrantTheme {
   static const Color primaryColor = Color(0xFFD32F2F);
   static const Color backgroundColor = Color(0xFFF5F5F5);
-  static const Color surfaceColor = Colors.white;
+  static const Color surfaceColor =
+      Colors.white; // This is the color for card surfaces
   static const Color errorColor = Colors.redAccent;
   static const Color textColor = Color(0xFF000000);
   static const Color secondaryTextColor = Colors.black87;
@@ -53,11 +54,15 @@ class VibrantTheme {
       ),
     ),
     cardTheme: CardThemeData(
-      elevation: 4,
+      elevation: 4, // Provides a visible shadow for depth
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 12),
+      color: surfaceColor, // Explicitly set card background color
+      surfaceTintColor:
+          Colors
+              .transparent, // Often good to keep transparent if you're setting `color` directly, or if you want no tinting.
+      // You can remove this line if you want Material 3 tinting behavior.
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
@@ -69,6 +74,24 @@ class VibrantTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: primaryColor, width: 2),
+      ),
+      hintStyle: TextStyle(color: Colors.grey[600]),
     ),
   );
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:user_end/screens/job_screen/job_list_screen.dart';
+import 'package:user_end/screens/job_screen/job_list_screen.dart'
+    hide VibrantTheme;
 import '../../widgets/success_story_cards/success_stories.dart';
 import '../../screens/quiz_screens/quiz_entry_screen.dart';
 import '../../screens/blog_screen/blog_screen.dart';
@@ -36,7 +37,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
   String get _lastName => widget.lastName;
 
   bool _loading = true;
-
 
   @override
   void initState() {
@@ -111,11 +111,11 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     try {
       await Amplify.Auth.signOut();
       var profileBox = await Hive.openBox('profileBox');
-       var jobCacheBox = await Hive.openBox('jobCacheBox');
-       var fcmBox = await Hive.openBox('fcmBox');
-       await profileBox.clear();
-       await jobCacheBox.clear();
-       await fcmBox.clear();
+      var jobCacheBox = await Hive.openBox('jobCacheBox');
+      var fcmBox = await Hive.openBox('fcmBox');
+      await profileBox.clear();
+      await jobCacheBox.clear();
+      await fcmBox.clear();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const AuthApp()),
@@ -149,9 +149,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
     BuildContext context,
     String userEmail,
     String userName,
-  ) {
-    
-  }
+  ) {}
 
   Widget _buildDrawerItem(
     BuildContext context, {
@@ -232,56 +230,60 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                       radius: isSmallScreen ? 36 : 50,
                       backgroundColor: Colors.white,
                       child: Icon(
-                        Icons.lightbulb,
+                        Icons.person,
                         size: isSmallScreen ? 36 : 60,
                         color: const Color(0xFFD32F2F),
                       ),
                     ),
                     const SizedBox(height: 10),
                     Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    Flexible(
-      child: Text(
-        (_firstName.isNotEmpty && _lastName.isNotEmpty)
-            ? '$_firstName $_lastName'
-            : 'Guest User',
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-        style: TextStyle(
-          fontSize: isSmallScreen ? 16 : 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          fontFamily: 'Poppins',
-        ),
-      ),
-    ),
-    const SizedBox(width: 6),
-   GestureDetector(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ViewProfileScreen(
-          userEmail: _userEmail,
-          userName: _firstName,
-        ),
-      ),
-    );
-  },
-  behavior: HitTestBehavior.translucent, // Makes full area tappable
-  child: Padding(
-    padding: const EdgeInsets.all(8.0), // Expand hit area without enlarging icon
-    child: const Icon(
-      Icons.edit,
-      size: 18,
-      color: Colors.white,
-    ),
-  ),
-),
-
-  ],
-),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            (_firstName.isNotEmpty && _lastName.isNotEmpty)
+                                ? '$_firstName $_lastName'
+                                : 'Guest User',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 16 : 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => ViewProfileScreen(
+                                      userEmail: _userEmail,
+                                      userName: _firstName,
+                                    ),
+                              ),
+                            );
+                          },
+                          behavior:
+                              HitTestBehavior
+                                  .translucent, // Makes full area tappable
+                          child: Padding(
+                            padding: const EdgeInsets.all(
+                              8.0,
+                            ), // Expand hit area without enlarging icon
+                            child: const Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 4),
                     Flexible(
@@ -350,7 +352,6 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
                           title: 'Contact Us',
                           pageIndex: 6,
                         ),
-                        
                       ],
                     ),
                   ),
@@ -436,7 +437,7 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
               //       color: Color(0xFFD32F2F),
               //       shape: BoxShape.circle,
               //     ),
-                 
+
               //   ),
               // ),
             ],
@@ -446,62 +447,62 @@ class _RoleBasedHomeState extends State<RoleBasedHome> {
       ),
       drawer: _buildDrawer(),
       body: SafeArea(
-  child: Stack(
-    children: [
-      PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        children: [
-          HomeScreen(
-            navigateTo: (context, route) => _navigateTo(_getPageIndex(route)),
-            username: _firstName,
-            email: _userEmail,
-          ),
-          QuizEntryScreen(name: _firstName, email: _userEmail),
-          SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
-          BlogScreen(userEmail: _userEmail, userName: _firstName),
-          JobListScreen(userEmail: _userEmail),
-        ],
+        child: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              children: [
+                HomeScreen(
+                  navigateTo:
+                      (context, route) => _navigateTo(_getPageIndex(route)),
+                  username: _firstName,
+                  email: _userEmail,
+                ),
+                QuizEntryScreen(name: _firstName, email: _userEmail),
+                SuccessStoryPage(userEmail: _userEmail, userName: _firstName),
+                BlogScreen(userEmail: _userEmail, userName: _firstName),
+                JobListScreen(userEmail: _userEmail),
+              ],
+            ),
+          ],
+        ),
       ),
-    ],
-  ),
-),
 
       bottomNavigationBar: SafeArea(
-  top: false,
-  child: Container(
-    height: 70,
-    decoration: BoxDecoration(
-      color: VibrantTheme.surfaceColor,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.3),
-          blurRadius: 10,
-          offset: const Offset(0, -5),
+        top: false,
+        child: Container(
+          height: 70,
+          decoration: BoxDecoration(
+            color: VibrantTheme.surfaceColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home, Icons.home_outlined, "Home"),
+              _buildNavItem(1, Icons.quiz, Icons.quiz_outlined, "Quiz"),
+              _buildNavItem(2, Icons.star, Icons.star_outline, "Stories"),
+              _buildNavItem(3, Icons.article, Icons.article_outlined, "Blog"),
+              _buildNavItem(4, Icons.work, Icons.work_outline, "Jobs"),
+            ],
+          ),
         ),
-      ],
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
       ),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildNavItem(0, Icons.home, Icons.home_outlined, "Home"),
-        _buildNavItem(1, Icons.quiz, Icons.quiz_outlined, "Quiz"),
-        _buildNavItem(2, Icons.star, Icons.star_outline, "Stories"),
-        _buildNavItem(3, Icons.article, Icons.article_outlined, "Blog"),
-        _buildNavItem(4, Icons.work, Icons.work_outline, "Jobs"),
-      ],
-    ),
-  ),
-),
-
     );
   }
 

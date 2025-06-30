@@ -6,7 +6,7 @@ import '../models/quiz_models/quiz.dart';
 import '../models/quiz_models/user_stats.dart';
 import '../models/blog_models/blog.dart';
 import '../models/success_story.dart';
-import '../models/comment.dart';
+// import '../models/comment.dart';
 import '../utils/constants.dart';
 
 class FirestoreService {
@@ -16,43 +16,60 @@ class FirestoreService {
 
   Future<List<Category>> getCategories() async {
     try {
-      final snapshot = await _firestore.collection(AppConstants.categoriesCollection).get();
-      return snapshot.docs.map((doc) => Category.fromFirestore(doc.data(), doc.id)).toList();
+      final snapshot =
+          await _firestore.collection(AppConstants.categoriesCollection).get();
+      return snapshot.docs
+          .map((doc) => Category.fromFirestore(doc.data(), doc.id))
+          .toList();
     } catch (e) {
       print("Error fetching categories: $e");
       rethrow;
     }
   }
 
-  Future<List<Quiz>> getQuizzes(String categoryId, String difficultyId, String difficulty) async {
+  Future<List<Quiz>> getQuizzes(
+    String categoryId,
+    String difficultyId,
+    String difficulty,
+  ) async {
     try {
-      final snapshot = await _firestore
-          .collection(AppConstants.categoriesCollection)
-          .doc(categoryId)
-          .collection(AppConstants.difficultyCollection)
-          .doc(difficultyId)
-          .collection(AppConstants.quizzesCollection)
-          .where('difficulty', isEqualTo: difficulty)
-          .get();
-      return snapshot.docs.map((doc) => Quiz.fromFirestore(doc.data(), doc.id)).toList();
+      final snapshot =
+          await _firestore
+              .collection(AppConstants.categoriesCollection)
+              .doc(categoryId)
+              .collection(AppConstants.difficultyCollection)
+              .doc(difficultyId)
+              .collection(AppConstants.quizzesCollection)
+              .where('difficulty', isEqualTo: difficulty)
+              .get();
+      return snapshot.docs
+          .map((doc) => Quiz.fromFirestore(doc.data(), doc.id))
+          .toList();
     } catch (e) {
       print("Error fetching quizzes: $e");
       rethrow;
     }
   }
 
-  Future<List<Question>> getQuestions(String categoryId, String difficultyId, String quizId) async {
+  Future<List<Question>> getQuestions(
+    String categoryId,
+    String difficultyId,
+    String quizId,
+  ) async {
     try {
-      final snapshot = await _firestore
-          .collection(AppConstants.categoriesCollection)
-          .doc(categoryId)
-          .collection(AppConstants.difficultyCollection)
-          .doc(difficultyId)
-          .collection(AppConstants.quizzesCollection)
-          .doc(quizId)
-          .collection(AppConstants.questionsCollection)
-          .get();
-      return snapshot.docs.map((doc) => Question.fromFirestore(doc.data(), doc.id)).toList();
+      final snapshot =
+          await _firestore
+              .collection(AppConstants.categoriesCollection)
+              .doc(categoryId)
+              .collection(AppConstants.difficultyCollection)
+              .doc(difficultyId)
+              .collection(AppConstants.quizzesCollection)
+              .doc(quizId)
+              .collection(AppConstants.questionsCollection)
+              .get();
+      return snapshot.docs
+          .map((doc) => Question.fromFirestore(doc.data(), doc.id))
+          .toList();
     } catch (e) {
       print("Error fetching questions: $e");
       rethrow;
@@ -71,18 +88,23 @@ class FirestoreService {
         throw Exception('Quiz ID cannot be empty');
       }
 
-      final userDocRef = _firestore.collection(AppConstants.userStatsCollection).doc(stats.userId);
+      final userDocRef = _firestore
+          .collection(AppConstants.userStatsCollection)
+          .doc(stats.userId);
 
       await userDocRef.set({
         'name': stats.name,
         'email': stats.email,
       }, SetOptions(merge: true));
 
-      final attemptData = Map<String, dynamic>.from(stats.toFirestore())
-        ..remove('name')
-        ..remove('email');
+      final attemptData =
+          Map<String, dynamic>.from(stats.toFirestore())
+            ..remove('name')
+            ..remove('email');
 
-      await userDocRef.collection(AppConstants.quizAttemptsCollection).add(attemptData);
+      await userDocRef
+          .collection(AppConstants.quizAttemptsCollection)
+          .add(attemptData);
 
       await _firestore.collection(AppConstants.quizResultsCollection).add({
         'userEmail': stats.email,
@@ -99,10 +121,11 @@ class FirestoreService {
 
   Future<List<UserStats>> getUserStatsByEmail(String email) async {
     try {
-      final userSnapshot = await _firestore
-          .collection(AppConstants.userStatsCollection)
-          .where('email', isEqualTo: email)
-          .get();
+      final userSnapshot =
+          await _firestore
+              .collection(AppConstants.userStatsCollection)
+              .where('email', isEqualTo: email)
+              .get();
 
       if (userSnapshot.docs.isEmpty) {
         return [];
@@ -112,12 +135,13 @@ class FirestoreService {
       final userId = userDoc.id;
       final userData = userDoc.data();
 
-      final attemptsSnapshot = await _firestore
-          .collection(AppConstants.userStatsCollection)
-          .doc(userId)
-          .collection(AppConstants.quizAttemptsCollection)
-          .orderBy('timestamp', descending: true)
-          .get();
+      final attemptsSnapshot =
+          await _firestore
+              .collection(AppConstants.userStatsCollection)
+              .doc(userId)
+              .collection(AppConstants.quizAttemptsCollection)
+              .orderBy('timestamp', descending: true)
+              .get();
 
       return attemptsSnapshot.docs.map((doc) {
         final attemptData = doc.data();
@@ -137,10 +161,11 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> getQuizResults() async {
     try {
-      final snapshot = await _firestore
-          .collection(AppConstants.quizResultsCollection)
-          .orderBy('score', descending: true)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection(AppConstants.quizResultsCollection)
+              .orderBy('score', descending: true)
+              .get();
 
       final results = <Map<String, dynamic>>[];
       for (var doc in snapshot.docs) {
@@ -176,15 +201,17 @@ class FirestoreService {
   // -------------------- BLOG FUNCTIONALITY --------------------
   Future<List<Blog>> getBlogs(String userEmail) async {
     try {
-      final snapshot = await _firestore
-          .collection(AppConstants.blogsCollection)
-          .orderBy('timestamp', descending: true)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection(AppConstants.blogsCollection)
+              .orderBy('timestamp', descending: true)
+              .get();
 
       return snapshot.docs.map((doc) {
         final data = doc.data();
         final blog = Blog.fromFirestore(data, doc.id);
-        blog.userLiked = (data['likedBy'] as List<dynamic>?)?.contains(userEmail) ?? false;
+        blog.userLiked =
+            (data['likedBy'] as List<dynamic>?)?.contains(userEmail) ?? false;
         return blog;
       }).toList();
     } catch (e) {
@@ -210,9 +237,15 @@ class FirestoreService {
     }
   }
 
-  Future<void> updateBlog(String blogId, Map<String, dynamic> updatedData) async {
+  Future<void> updateBlog(
+    String blogId,
+    Map<String, dynamic> updatedData,
+  ) async {
     try {
-      await _firestore.collection(AppConstants.blogsCollection).doc(blogId).update(updatedData);
+      await _firestore
+          .collection(AppConstants.blogsCollection)
+          .doc(blogId)
+          .update(updatedData);
     } catch (e) {
       print("Error updating blog: $e");
       rethrow;
@@ -221,7 +254,10 @@ class FirestoreService {
 
   Future<void> deleteBlog(String blogId) async {
     try {
-      await _firestore.collection(AppConstants.blogsCollection).doc(blogId).delete();
+      await _firestore
+          .collection(AppConstants.blogsCollection)
+          .doc(blogId)
+          .delete();
     } catch (e) {
       print("Error deleting blog: $e");
       rethrow;
@@ -230,7 +266,9 @@ class FirestoreService {
 
   Future<void> likeBlog(String blogId, String userEmail) async {
     try {
-      final blogRef = _firestore.collection(AppConstants.blogsCollection).doc(blogId);
+      final blogRef = _firestore
+          .collection(AppConstants.blogsCollection)
+          .doc(blogId);
       await _firestore.runTransaction((transaction) async {
         final blogSnap = await transaction.get(blogRef);
         if (!blogSnap.exists) {
@@ -258,7 +296,9 @@ class FirestoreService {
 
   Future<void> removeLike(String blogId, String userEmail) async {
     try {
-      final blogRef = _firestore.collection(AppConstants.blogsCollection).doc(blogId);
+      final blogRef = _firestore
+          .collection(AppConstants.blogsCollection)
+          .doc(blogId);
       await _firestore.runTransaction((transaction) async {
         final blogSnap = await transaction.get(blogRef);
         if (!blogSnap.exists) {
@@ -285,7 +325,9 @@ class FirestoreService {
 
   Future<void> dislikeBlog(String blogId, String userEmail) async {
     try {
-      final blogRef = _firestore.collection(AppConstants.blogsCollection).doc(blogId);
+      final blogRef = _firestore
+          .collection(AppConstants.blogsCollection)
+          .doc(blogId);
       await _firestore.runTransaction((transaction) async {
         final blogSnap = await transaction.get(blogRef);
         if (!blogSnap.exists) {
@@ -314,22 +356,28 @@ class FirestoreService {
   // -------------------- SUCCESS STORY FUNCTIONALITY --------------------
   Future<List<SuccessStory>> getSuccessStories(String userEmail) async {
     try {
-      final snapshot = await _firestore
-          .collection(AppConstants.successStoriesCollection)
-          .orderBy('timestamp', descending: true)
-          .get();
-      return await Future.wait(snapshot.docs.map((doc) async {
-        final data = doc.data();
-        final story = SuccessStory.fromFirestore(data, doc.id);
-        final userInteraction = await _firestore
-            .collection(AppConstants.successStoriesCollection)
-            .doc(story.id)
-            .collection('interactions')
-            .doc(userEmail)
-            .get();
-        story.userLiked = userInteraction.exists && (userInteraction.data()?['liked'] ?? false);
-        return story;
-      }).toList());
+      final snapshot =
+          await _firestore
+              .collection(AppConstants.successStoriesCollection)
+              .orderBy('timestamp', descending: true)
+              .get();
+      return await Future.wait(
+        snapshot.docs.map((doc) async {
+          final data = doc.data();
+          final story = SuccessStory.fromFirestore(data, doc.id);
+          final userInteraction =
+              await _firestore
+                  .collection(AppConstants.successStoriesCollection)
+                  .doc(story.id)
+                  .collection('interactions')
+                  .doc(userEmail)
+                  .get();
+          story.userLiked =
+              userInteraction.exists &&
+              (userInteraction.data()?['liked'] ?? false);
+          return story;
+        }).toList(),
+      );
     } catch (e) {
       print("Error fetching success stories: $e");
       rethrow;
@@ -338,15 +386,15 @@ class FirestoreService {
 
   Future<void> likeSuccessStory(String storyId, String userEmail) async {
     try {
-      final storyRef = _firestore.collection(AppConstants.successStoriesCollection).doc(storyId);
+      final storyRef = _firestore
+          .collection(AppConstants.successStoriesCollection)
+          .doc(storyId);
       final interactionRef = storyRef.collection('interactions').doc(userEmail);
       final snapshot = await interactionRef.get();
       final hasLiked = snapshot.exists && snapshot.data()?['liked'] == true;
       if (!hasLiked) {
         final batch = _firestore.batch();
-        batch.update(storyRef, {
-          'likes': FieldValue.increment(1),
-        });
+        batch.update(storyRef, {'likes': FieldValue.increment(1)});
         batch.set(interactionRef, {'liked': true}, SetOptions(merge: true));
         await batch.commit();
       }
@@ -358,15 +406,15 @@ class FirestoreService {
 
   Future<void> removeLikeSuccessStory(String storyId, String userEmail) async {
     try {
-      final storyRef = _firestore.collection(AppConstants.successStoriesCollection).doc(storyId);
+      final storyRef = _firestore
+          .collection(AppConstants.successStoriesCollection)
+          .doc(storyId);
       final interactionRef = storyRef.collection('interactions').doc(userEmail);
       final snapshot = await interactionRef.get();
       final hasLiked = snapshot.exists && snapshot.data()?['liked'] == true;
       if (hasLiked) {
         final batch = _firestore.batch();
-        batch.update(storyRef, {
-          'likes': FieldValue.increment(-1),
-        });
+        batch.update(storyRef, {'likes': FieldValue.increment(-1)});
         batch.set(interactionRef, {'liked': false}, SetOptions(merge: true));
         await batch.commit();
       }
@@ -386,7 +434,8 @@ class FirestoreService {
   }) async {
     try {
       final itemRef = _firestore.collection(collection).doc(itemId);
-      final commentRef = itemRef.collection(AppConstants.commentsCollection).doc();
+      final commentRef =
+          itemRef.collection(AppConstants.commentsCollection).doc();
       final batch = _firestore.batch();
       batch.set(commentRef, {
         'content': content,
@@ -396,9 +445,7 @@ class FirestoreService {
         'likes': 0,
         'likedBy': [],
       });
-      batch.update(itemRef, {
-        'commentCount': FieldValue.increment(1),
-      });
+      batch.update(itemRef, {'commentCount': FieldValue.increment(1)});
       await batch.commit();
     } catch (e) {
       print("Error posting comment: $e");
@@ -406,99 +453,99 @@ class FirestoreService {
     }
   }
 
-  Future<List<Comment>> getComments({
-    required String collection,
-    required String itemId,
-    required String userEmail,
-  }) async {
-    try {
-      final snapshot = await _firestore
-          .collection(collection)
-          .doc(itemId)
-          .collection(AppConstants.commentsCollection)
-          .orderBy('timestamp', descending: true)
-          .get();
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Comment(
-          id: doc.id,
-          content: data['content'] ?? '',
-          authorEmail: data['authorEmail'] ?? '',
-          authorName: data['authorName'] ?? 'Anonymous',
-          likes: data['likes'] ?? 0,
-          userLiked: (data['likedBy'] as List<dynamic>?)?.contains(userEmail) ?? false,
-          timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        );
-      }).toList();
-    } catch (e) {
-      print("Error fetching comments: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> likeComment({
-    required String collection,
-    required String itemId,
-    required String commentId,
-    required String userEmail,
-  }) async {
-    try {
-      final commentRef = _firestore
-          .collection(collection)
-          .doc(itemId)
-          .collection(AppConstants.commentsCollection)
-          .doc(commentId);
-      await _firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(commentRef);
-        if (!snapshot.exists) {
-          throw Exception("Comment does not exist!");
-        }
-        final data = snapshot.data()!;
-        List<String> likedBy = List<String>.from(data['likedBy'] ?? []);
-        if (!likedBy.contains(userEmail)) {
-          likedBy.add(userEmail);
-          transaction.update(commentRef, {
-            'likes': FieldValue.increment(1),
-            'likedBy': likedBy,
-          });
-        }
-      });
-    } catch (e) {
-      print("Error liking comment: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> removeCommentLike({
-    required String collection,
-    required String itemId,
-    required String commentId,
-    required String userEmail,
-  }) async {
-    try {
-      final commentRef = _firestore
-          .collection(collection)
-          .doc(itemId)
-          .collection(AppConstants.commentsCollection)
-          .doc(commentId);
-      await _firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(commentRef);
-        if (!snapshot.exists) {
-          throw Exception("Comment does not exist!");
-        }
-        final data = snapshot.data()!;
-        List<String> likedBy = List<String>.from(data['likedBy'] ?? []);
-        if (likedBy.contains(userEmail)) {
-          likedBy.remove(userEmail);
-          transaction.update(commentRef, {
-            'likes': FieldValue.increment(-1),
-            'likedBy': likedBy,
-          });
-        }
-      });
-    } catch (e) {
-      print("Error removing comment like: $e");
-      rethrow;
-    }
-  }
+  // Future<List<Comment>> getComments({
+  //   required String collection,
+  //   required String itemId,
+  //   required String userEmail,
+  // }) async {
+  //   try {
+  //     final snapshot = await _firestore
+  //         .collection(collection)
+  //         .doc(itemId)
+  //         .collection(AppConstants.commentsCollection)
+  //         .orderBy('timestamp', descending: true)
+  //         .get();
+  //     return snapshot.docs.map((doc) {
+  //       final data = doc.data();
+  //       return Comment(
+  //         id: doc.id,
+  //         content: data['content'] ?? '',
+  //         authorEmail: data['authorEmail'] ?? '',
+  //         authorName: data['authorName'] ?? 'Anonymous',
+  //         likes: data['likes'] ?? 0,
+  //         userLiked: (data['likedBy'] as List<dynamic>?)?.contains(userEmail) ?? false,
+  //         timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+  //       );
+  //     }).toList();
+  //   } catch (e) {
+  //     print("Error fetching comments: $e");
+  //     rethrow;
+  //   }
+  // }
+  //
+  //   Future<void> likeComment({
+  //     required String collection,
+  //     required String itemId,
+  //     required String commentId,
+  //     required String userEmail,
+  //   }) async {
+  //     try {
+  //       final commentRef = _firestore
+  //           .collection(collection)
+  //           .doc(itemId)
+  //           .collection(AppConstants.commentsCollection)
+  //           .doc(commentId);
+  //       await _firestore.runTransaction((transaction) async {
+  //         final snapshot = await transaction.get(commentRef);
+  //         if (!snapshot.exists) {
+  //           throw Exception("Comment does not exist!");
+  //         }
+  //         final data = snapshot.data()!;
+  //         List<String> likedBy = List<String>.from(data['likedBy'] ?? []);
+  //         if (!likedBy.contains(userEmail)) {
+  //           likedBy.add(userEmail);
+  //           transaction.update(commentRef, {
+  //             'likes': FieldValue.increment(1),
+  //             'likedBy': likedBy,
+  //           });
+  //         }
+  //       });
+  //     } catch (e) {
+  //       print("Error liking comment: $e");
+  //       rethrow;
+  //     }
+  //   }
+  //
+  //   Future<void> removeCommentLike({
+  //     required String collection,
+  //     required String itemId,
+  //     required String commentId,
+  //     required String userEmail,
+  //   }) async {
+  //     try {
+  //       final commentRef = _firestore
+  //           .collection(collection)
+  //           .doc(itemId)
+  //           .collection(AppConstants.commentsCollection)
+  //           .doc(commentId);
+  //       await _firestore.runTransaction((transaction) async {
+  //         final snapshot = await transaction.get(commentRef);
+  //         if (!snapshot.exists) {
+  //           throw Exception("Comment does not exist!");
+  //         }
+  //         final data = snapshot.data()!;
+  //         List<String> likedBy = List<String>.from(data['likedBy'] ?? []);
+  //         if (likedBy.contains(userEmail)) {
+  //           likedBy.remove(userEmail);
+  //           transaction.update(commentRef, {
+  //             'likes': FieldValue.increment(-1),
+  //             'likedBy': likedBy,
+  //           });
+  //         }
+  //       });
+  //     } catch (e) {
+  //       print("Error removing comment like: $e");
+  //       rethrow;
+  //     }
+  //   }
 }
