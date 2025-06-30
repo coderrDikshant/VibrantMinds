@@ -1,16 +1,14 @@
-# user_end
+# VMT application (user side)
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+in this directory, you can find the user side of the vmt application.
+ we have used the following technologies:
+- flutter 
+- dart
+- firebase (for blogs and success stories, section)
+- aws cognito (for role based authentication and authorization)
+- aws amplify (for backend services)
+- aws s3 (for storing images and files)
+- aws dynamodb (for storing data)
+- aws lambda (for serverless functions)
+- aws api gateway (for creating APIs)
+- fcm for push notifications
